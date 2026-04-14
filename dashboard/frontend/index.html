@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HIDS - Cyber Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="bg-gray-900 text-green-400 font-mono p-8 min-h-screen">
 
@@ -15,61 +16,173 @@
             </h1>
             <div class="flex items-center space-x-2">
                 <span id="status-dot" class="w-3 h-3 rounded-full bg-red-500"></span>
-                <span id="status-text" class="text-sm">Déconnecté</span>
+                <span id="status-text" class="text-sm">Disconnected</span>
             </div>
         </header>
 
+        <section class="mb-8 p-4 border border-gray-700 bg-gray-800 rounded shadow-lg">
+            <h2 class="text-lg text-gray-400 mb-2">/ Telemetry (System Health)</h2>
+            <canvas id="metricsChart" height="60"></canvas>
+        </section>
+
         <main>
-            <h2 class="text-xl mb-4 text-gray-400">Flux d'alertes en temps réel</h2>
+            <div class="flex justify-between items-end mb-4 border-b border-gray-700 pb-2">
+                <h2 class="text-lg text-gray-400">/ Live Event Stream</h2>
+                
+                <div class="flex space-x-3">
+                    <button id="btn-info" onclick="toggleFilter('INFO', 'btn-info')" class="px-3 py-1 text-xs border border-green-600 bg-green-900 bg-opacity-40 text-green-400 rounded transition-all">INFO</button>
+                    <button id="btn-warning" onclick="toggleFilter('WARNING', 'btn-warning')" class="px-3 py-1 text-xs border border-yellow-600 bg-yellow-900 bg-opacity-40 text-yellow-400 rounded transition-all">WARN</button>
+                    <button id="btn-critical" onclick="toggleFilter('CRITICAL', 'btn-critical')" class="px-3 py-1 text-xs border border-red-600 bg-red-900 bg-opacity-40 text-red-400 rounded transition-all">CRIT</button>
+                    
+                    <div class="w-px bg-gray-600 mx-2"></div> <button onclick="clearAlerts()" class="px-3 py-1 text-xs border border-gray-500 bg-gray-800 text-gray-300 hover:bg-gray-700 rounded transition-all">CLEAR</button>
+                </div>
+            </div>
+
             <div id="alerts-container" class="space-y-4">
                 </div>
         </main>
     </div>
 
     <script>
-        // Connexion à ton API locale
-        const ws = new WebSocket("ws://127.0.0.1:8000/ws/alerts");
-        
-        const statusDot = document.getElementById('status-dot');
-        const statusText = document.getElementById('status-text');
+        // --- 1. STATE MANAGEMENT (NEW) ---
+        let alertHistory = [];
+        const MAX_ALERTS = 50;
+        let activeFilters = { 'INFO': true, 'WARNING': true, 'CRITICAL': true };
+
+        // --- 2. AUDIO CONFIGURATION ---
+        function playCyberAlert() {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            oscillator.type = 'square';
+            oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); 
+            oscillator.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.2); 
+            
+            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime); 
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4); 
+            
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 0.5);
+        }
+
+        // --- 3. CHART.JS CONFIGURATION ---
+        const ctx = document.getElementById('metricsChart').getContext('2d');
+        const metricsChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [], datasets: [
+                    { label: 'CPU Load', data: [], borderColor: '#10b981', tension: 0.3, pointBackgroundColor: '#10b981' }, 
+                    { label: 'RAM Usage (%)', data: [], borderColor: '#3b82f6', tension: 0.3, pointBackgroundColor: '#3b82f6' } 
+                ]
+            },
+            options: { responsive: true, scales: { y: { beginAtZero: true, grid: { color: '#374151' }, ticks: { color: '#9ca3af' } }, x: { grid: { color: '#374151' }, ticks: { color: '#9ca3af' } } }, plugins: { legend: { labels: { color: '#9ca3af', font: { family: 'monospace' } } } } }
+        });
+
+        // --- 4. UI LOGIC (NEW) ---
         const alertsContainer = document.getElementById('alerts-container');
 
-        // Événement : Connexion réussie
-        ws.onopen = () => {
-            statusDot.classList.replace('bg-red-500', 'bg-green-500');
-            statusText.innerText = "Connecté (En écoute...)";
-        };
-
-        // Événement : Réception d'un message du serveur
-        ws.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            const alertElement = document.createElement('div');
+        function toggleFilter(severity, btnId) {
+            activeFilters[severity] = !activeFilters[severity];
+            const btn = document.getElementById(btnId);
             
-            // Couleurs selon la gravité
+            if (activeFilters[severity]) {
+                btn.classList.remove('opacity-30', 'grayscale');
+            } else {
+                btn.classList.add('opacity-30', 'grayscale');
+            }
+            renderAlerts();
+        }
+
+        function clearAlerts() {
+            alertHistory = [];
+            renderAlerts();
+        }
+
+        function createAlertHTML(data) {
             let borderClass = data.severity === 'CRITICAL' ? 'border-red-600 bg-red-900 bg-opacity-20' : 
-                              data.severity === 'WARNING' ? 'border-yellow-600' : 'border-green-600';
+                              data.severity === 'WARNING' ? 'border-yellow-600 bg-yellow-900 bg-opacity-10' : 'border-green-600';
             let textClass = data.severity === 'CRITICAL' ? 'text-red-400 font-bold' : 
                             data.severity === 'WARNING' ? 'text-yellow-400' : 'text-green-400';
 
-            alertElement.className = `p-4 border ${borderClass} rounded shadow-lg transition-all duration-300`;
-            alertElement.innerHTML = `
-                <div class="flex justify-between items-start">
-                    <div>
-                        <span class="text-xs text-gray-500">[${data.timestamp || 'N/A'}]</span>
-                        <span class="ml-2 ${textClass}">[${data.severity || 'INFO'}]</span>
-                        <p class="mt-2 text-white">${data.message || data.msg || 'Alerte reçue'}</p>
+            return `
+                <div class="p-4 border ${borderClass} rounded shadow-lg transition-all duration-300 animate-fade-in">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="text-xs text-gray-500">[${data.timestamp || 'N/A'}]</span>
+                            <span class="ml-2 ${textClass}">[${data.severity || 'INFO'}]</span>
+                            <p class="mt-2 text-white">${data.message || data.msg || 'Alert received'}</p>
+                        </div>
+                        <div class="flex flex-col items-end">
+                            <span class="text-xs text-gray-500 uppercase">${data.module || data.type || 'SYSTEM'}</span>
+                        </div>
                     </div>
-                    <div class="text-xs text-gray-500 uppercase">${data.module || data.type || 'SYSTEM'}</div>
                 </div>
             `;
-            // Ajoute l'alerte tout en haut de la liste
-            alertsContainer.prepend(alertElement);
+        }
+
+        function renderAlerts() {
+            alertsContainer.innerHTML = '';
+            alertHistory.forEach(data => {
+                let sev = data.severity || 'INFO';
+                // Only show if the filter for this severity is active
+                if (activeFilters[sev] !== false) {
+                    alertsContainer.innerHTML += createAlertHTML(data);
+                }
+            });
+        }
+
+        // --- 5. WEBSOCKET CONNECTION ---
+        const ws = new WebSocket("ws://127.0.0.1:8000/ws/alerts");
+        const statusDot = document.getElementById('status-dot');
+        const statusText = document.getElementById('status-text');
+
+        ws.onopen = () => {
+            statusDot.classList.replace('bg-red-500', 'bg-green-500');
+            statusText.innerText = "Connected (Listening...)";
+        };
+
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            
+            // Manage History Array
+            alertHistory.unshift(data); // Add to beginning
+            if (alertHistory.length > MAX_ALERTS) {
+                alertHistory.pop(); // Remove oldest if we exceed MAX_ALERTS
+            }
+
+            // Play Sound
+            if (data.severity === 'CRITICAL') playCyberAlert();
+
+            // Update Chart
+            if (data.load !== undefined || data.memory !== undefined) {
+                if (metricsChart.data.labels.length >= 10) {
+                    metricsChart.data.labels.shift();
+                    metricsChart.data.datasets[0].data.shift();
+                    metricsChart.data.datasets[1].data.shift();
+                }
+                const timeStr = data.timestamp ? data.timestamp.split(' ')[1] : new Date().toLocaleTimeString();
+                metricsChart.data.labels.push(timeStr);
+                metricsChart.data.datasets[0].data.push(data.load || 0);
+                metricsChart.data.datasets[1].data.push(data.memory || 0);
+                metricsChart.update();
+            }
+
+            // Re-render UI
+            renderAlerts();
         };
 
         ws.onclose = () => {
             statusDot.classList.replace('bg-green-500', 'bg-red-500');
-            statusText.innerText = "Déconnecté";
+            statusText.innerText = "Disconnected";
         };
     </script>
+    <style>
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+    </style>
 </body>
 </html>
