@@ -4,11 +4,8 @@
 # HIDS - Module File Integrity (JSON Export)
 # ============================================
 
-CRITICAL_FILES="/etc/passwd /etc/shadow /etc/sudoers /etc/ssh/sshd_config"
-BASELINE_DIR="./baseline"
-
 # ---- CONFIGURATION ----
-LOG_FILE="/opt/hids-project/hids_project/dashboard/test_logs/hids_system.log"
+source "$(dirname "$0")/config.env"
 
 mkdir -p "$BASELINE_DIR"
 

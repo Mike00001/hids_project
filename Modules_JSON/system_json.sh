@@ -5,11 +5,7 @@
 # =========================================
 
 # ---- CONFIGURATION ----
-LOG_FILE="/opt/hids-project/hids_project/dashboard/test_logs/hids_system.log"
-
-LOAD_LIMIT_MULTIPLIER=2
-MEM_LIMIT=85
-DISK_LIMIT=90
+source "$(dirname "$0")/config.env"
 
 # ---- FUNCTIONS ----
 get_cpu_load() { cut -d ' ' -f1 /proc/loadavg; }

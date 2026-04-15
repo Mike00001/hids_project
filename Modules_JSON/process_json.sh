@@ -4,10 +4,8 @@
 # HIDS - Module Process & Network (JSON Export)
 # ===============================================
 
-SUSPICIOUS_DIRS="/tmp /dev/shm /var/tmp"
-
 # ---- CONFIGURATION ----
-LOG_FILE="/opt/hids-project/hids_project/dashboard/test_logs/hids_system.log"
+source "$(dirname "$0")/config.env"
 
 # ---- FUNCTION: Send Alert to Dashboard ----
 send_alert() {
@@ -43,8 +41,6 @@ for dir in $SUSPICIOUS_DIRS; do
 done
 
 # 3. Ports (Ports non autorisés ouverts)
-ALLOWED_PORTS=":22$|:80$|:443$|:53$"
-ALLOWED_PROCS="tailscaled|systemd-resolve|uvicorn|systemd-network"
 while read line; do
     port=$(echo "$line" | awk '{print $5}')
     proc=$(echo "$line" | awk '{print $7}')

@@ -4,7 +4,8 @@
 # HIDS - Module User Activity (JSON Export)
 # ===============================================
 
-LOG_FILE="/opt/hids-project/hids_project/dashboard/test_logs/hids_system.log"
+# ---- CONFIGURATION ----
+source "$(dirname "$0")/config.env"
 
 # ---- FUNCTION: Send Alert to Dashboard ----
 send_alert() {

@@ -1,0 +1,13 @@
+[Unit]
+Description=Run HIDS Agent every minute
+
+[Timer]
+# Starts 1 minute after boot
+OnBootSec=1min
+# Runs every 1 minute
+OnUnitActiveSec=1min
+# Links back to the service
+Unit=hids-agent.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,10 @@
+[Unit]
+Description=HIDS Agent Monitoring Script
+After=network.target
+
+[Service]
+Type=oneshot
+User=root
+# We define the working directory so relative paths in scripts resolve correctly
+WorkingDirectory=/opt/hids-project/hids_project/Modules_JSON
+ExecStart=/usr/bin/env bash /opt/hids-project/hids_project/Modules_JSON/main_json.sh
