@@ -43,8 +43,7 @@ done
 
 # 3. Ports (Ports non autorisés ouverts)
 ALLOWED_PORTS=":22$|:80$|:443$|:53$"
-ALLOWED_PROCS="tailscaled|systemd-resolve"
-
+ALLOWED_PROCS="tailscaled|systemd-resolve|uvicorn|systemd-network"
 while read line; do
     port=$(echo "$line" | awk '{print $5}')
     proc=$(echo "$line" | awk '{print $7}')
