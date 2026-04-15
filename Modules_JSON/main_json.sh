@@ -9,3 +9,4 @@ cd "$(dirname "$0")"
 ./system_json.sh
 ./file_json.sh
 ./process_json.sh
+./user_json.sh
