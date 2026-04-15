@@ -4,8 +4,8 @@ Description=Run HIDS Agent every minute
 [Timer]
 # Starts 1 minute after boot
 OnBootSec=1min
-# Runs every 1 minute
-OnUnitActiveSec=1min
+# Runs every 5 seconds (Live Demo Mode)
+OnUnitActiveSec=5s
 # Links back to the service
 Unit=hids-agent.service
 
