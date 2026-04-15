@@ -42,10 +42,18 @@ for dir in $SUSPICIOUS_DIRS; do
 done
 
 # 3. Ports (Ports non autorisés ouverts)
+ALLOWED_PORTS=":22$|:80$|:443$|:53$"
+ALLOWED_PROCS="tailscaled|systemd-resolve"
+
 while read line; do
-    port=$(echo $line | awk '{print $5}')
-    proc=$(echo $line | awk '{print $7}')
-    if ! echo "$port" | grep -E ":22|:80|:443" >/dev/null; then
+    port=$(echo "$line" | awk '{print $5}')
+    proc=$(echo "$line" | awk '{print $7}')
+    
+    if echo "$proc" | grep -qE "$ALLOWED_PROCS"; then
+        continue
+    fi
+
+    if ! echo "$port" | grep -E "$ALLOWED_PORTS" >/dev/null; then
         send_alert "WARNING" "Port: $port ($proc)"
     fi
 done < <(ss -tulnp | tail -n +2)
