@@ -21,18 +21,34 @@ send_alert() {
 }
 
 # ============================================
-# LOGIQUE MÉTIER (Intacte)
+# LOGIQUE MÉTIER & EXPORT DES STATISTIQUES
 # ============================================
 
-# 1. High CPU (>70%)
+# --- 1. Export: Top Processes (Tableau Dashbaord) ---
+top_processes="["
+# ps custom format: pid, user, %cpu, command
+while read pid user cpu cmd; do
+    # On échappe les guillemets éventuels de la commande
+    safe_cmd=$(echo "$cmd" | sed 's/"/\\"/g')
+    top_processes+="{\"pid\":\"$pid\", \"user\":\"$user\", \"cpu\":\"$cpu\", \"cmd\":\"$safe_cmd\"},"
+done < <(ps -eo pid,user,%cpu,comm --sort=-%cpu | awk 'NR>1 && NR<=6')
+# Retrait de la dernière virgule
+top_processes=${top_processes%,}
+top_processes+="]"
+
+timestamp=$(date +"%Y-%m-%d %H:%M:%S")
+host=$(hostname)
+echo "{\"timestamp\":\"$timestamp\",\"host\":\"$host\",\"module\":\"process_audit\",\"top_processes\":$top_processes}" >> "$LOG_FILE"
+
+
+# --- 2. Alertes: High CPU (>70%) ---
 while read line; do
     proc=$(echo $line | awk '{print $11}')
     cpu=$(echo $line | awk '{print $3}')
-    # J'ai passé la sévérité de "HIGH" à "CRITICAL" pour que ton frontend l'affiche bien en rouge
     send_alert "process_audit" "CRITICAL" "High CPU: $proc ($cpu%)"
 done < <(ps aux --sort=-%cpu | awk 'NR>1 && $3>70')
 
-# 2. Suspicious dirs (Exécution depuis /tmp etc.)
+# --- 3. Alertes: Suspicious dirs ---
 for dir in $SUSPICIOUS_DIRS; do
     while read line; do
         proc=$(echo $line | awk '{print $11}')
@@ -40,7 +56,11 @@ for dir in $SUSPICIOUS_DIRS; do
     done < <(ps aux | grep "$dir" | grep -v grep)
 done
 
-# 3. Ports (Ports non autorisés ouverts)
+# --- 4. Export: Open Ports Stats (Widget) ---
+total_ports=$(ss -tuln | tail -n +2 | wc -l)
+echo "{\"timestamp\":\"$timestamp\",\"host\":\"$host\",\"module\":\"network_audit\",\"open_ports\":\"$total_ports\"}" >> "$LOG_FILE"
+
+# --- 5. Alertes: Ports non autorisés ---
 while read line; do
     port=$(echo "$line" | awk '{print $5}')
     proc=$(echo "$line" | awk '{print $7}')
