@@ -1,14 +1,17 @@
 #!/bin/bash
 
-RED='\033[0;31m'
-YELLOW='\033[1;33m'
-GREEN='\033[0;32m'
-NC='\033[0m'
+# =========================================
+# HIDS - Module System Health (JSON Export)
+# =========================================
+
+# ---- CONFIGURATION ----
+LOG_FILE="/opt/hids-project/hids_project/dashboard/test_logs/hids_system.log"
 
 LOAD_LIMIT_MULTIPLIER=2
 MEM_LIMIT=85
 DISK_LIMIT=90
 
+# ---- FUNCTIONS ----
 get_cpu_load() { cut -d ' ' -f1 /proc/loadavg; }
 get_cpu_cores() { nproc; }
 
@@ -43,18 +46,13 @@ generate_alert() {
         status="HIGH_MEMORY"; severity="WARNING"; message="High memory usage"
     fi
 
-    case "$severity" in
-        CRITICAL) color=$RED ;;
-        WARNING) color=$YELLOW ;;
-        INFO) color=$GREEN ;;
-    esac
-
-    echo -e "${color}[$severity] $message | Load:$load Mem:${mem}% Disk:${disk}%${NC}"
-
-    timestamp=$(date +"%F %T")
+    timestamp=$(date +"%Y-%m-%d %H:%M:%S")
     host=$(hostname)
 
-    echo "{\"timestamp\":\"$timestamp\",\"host\":\"$host\",\"module\":\"system_health\",\"status\":\"$status\",\"severity\":\"$severity\",\"load\":\"$load\",\"memory\":\"$mem\",\"disk\":\"$disk\",\"message\":\"$message\"}"
+    # ---- EXPORT JSON (Format NDJSON) ----
+    json_payload="{\"timestamp\":\"$timestamp\",\"host\":\"$host\",\"module\":\"system_health\",\"status\":\"$status\",\"severity\":\"$severity\",\"load\":\"$load\",\"memory\":\"$mem\",\"disk\":\"$disk\",\"message\":\"$message\"}"
+    
+    echo "$json_payload" >> "$LOG_FILE"
 }
 
 generate_alert

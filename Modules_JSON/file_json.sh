@@ -1,65 +1,57 @@
 #!/bin/bash
 
+# ============================================
+# HIDS - Module File Integrity (JSON Export)
+# ============================================
+
 CRITICAL_FILES="/etc/passwd /etc/shadow /etc/sudoers /etc/ssh/sshd_config"
 BASELINE_DIR="./baseline"
-LOG_FILE="./file_integrity.log"
 
-RED="\e[31m"; YELLOW="\e[33m"; BLUE="\e[34m"; RESET="\e[0m"
+# ---- CONFIGURATION ----
+LOG_FILE="/opt/hids-project/hids_project/dashboard/test_logs/hids_system.log"
 
 mkdir -p "$BASELINE_DIR"
-JSON_ALERTS=()
 
-log_alert() {
+# ---- FUNCTION: Send Alert to Dashboard ----
+send_alert() {
     local severity=$1
     local message=$2
+    local timestamp=$(date +"%Y-%m-%d %H:%M:%S")
+    local host=$(hostname)
 
-    case "$severity" in
-        INFO) echo -e "${BLUE}[INFO]${RESET} $message" ;;
-        WARNING) echo -e "${YELLOW}[WARNING]${RESET} $message" ;;
-        HIGH|CRITICAL) echo -e "${RED}[$severity]${RESET} $message" ;;
-    esac
+    local safe_message=$(echo "$message" | sed 's/"/\\"/g')
 
-    echo "$(date '+%F %T') [$severity] $message" >> "$LOG_FILE"
-
-    esc=$(echo "$message" | sed 's/"/\\"/g')
-    JSON_ALERTS+=("{\"severity\":\"$severity\",\"message\":\"$esc\"}")
+    echo "{\"timestamp\":\"$timestamp\",\"host\":\"$host\",\"module\":\"file_integrity\",\"severity\":\"$severity\",\"message\":\"$safe_message\"}" >> "$LOG_FILE"
 }
 
-echo "=== File Integrity Check ==="
+# ============================================
+# LOGIQUE MÉTIER (Intacte)
+# ============================================
 
 for file in $CRITICAL_FILES; do
-    [ ! -f "$file" ] && log_alert "WARNING" "Missing: $file" && continue
+    if [ ! -f "$file" ]; then
+        send_alert "WARNING" "Missing: $file"
+        continue
+    fi
 
     base="$BASELINE_DIR/$(basename $file).hash"
 
     if [ ! -f "$base" ]; then
         sha256sum "$file" > "$base"
-        log_alert "INFO" "Baseline created: $file"
+        send_alert "INFO" "Baseline created: $file"
         continue
     fi
 
-    [ "$(sha256sum "$file")" != "$(cat "$base")" ] && \
-        log_alert "CRITICAL" "Modified: $file"
+    if [ "$(sha256sum "$file")" != "$(cat "$base")" ]; then
+        send_alert "CRITICAL" "Modified: $file"
+    fi
 done
 
-# Permissions
 perm=$(stat -c "%a" /etc/shadow 2>/dev/null)
-[ "$perm" != "600" ] && log_alert "HIGH" "/etc/shadow perm: $perm"
+if [ "$perm" != "600" ]; then
+    send_alert "HIGH" "/etc/shadow perm: $perm"
+fi
 
-# World writable
 while read f; do
-    log_alert "WARNING" "World-writable: $f"
+    send_alert "WARNING" "World-writable: $f"
 done < <(find /etc -type f -perm -002 2>/dev/null)
-
-echo "=== Scan Complete ==="
-
-# JSON output
-timestamp=$(date +"%F %T")
-host=$(hostname)
-
-printf "{\"timestamp\":\"%s\",\"host\":\"%s\",\"module\":\"file_integrity\",\"alerts\":[" "$timestamp" "$host"
-for ((i=0;i<${#JSON_ALERTS[@]};i++)); do
-    printf "%s" "${JSON_ALERTS[$i]}"
-    [ $i -lt $((${#JSON_ALERTS[@]}-1)) ] && printf ","
-done
-printf "]}\n"
