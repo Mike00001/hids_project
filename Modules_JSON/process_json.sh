@@ -38,7 +38,7 @@ top_processes+="]"
 
 timestamp=$(date +"%Y-%m-%d %H:%M:%S")
 host=$(hostname)
-echo "{\"timestamp\":\"$timestamp\",\"host\":\"$host\",\"module\":\"process_audit\",\"top_processes\":$top_processes}" >> "$LOG_FILE"
+echo "{\"timestamp\":\"$timestamp\",\"host\":\"$host\",\"module\":\"process_audit\",\"severity\":\"INFO\",\"message\":\"Process audit check complete\",\"top_processes\":$top_processes}" >> "$LOG_FILE"
 
 
 # --- 2. Alertes: High CPU (>70%) ---
@@ -58,7 +58,7 @@ done
 
 # --- 4. Export: Open Ports Stats (Widget) ---
 total_ports=$(ss -tuln | tail -n +2 | wc -l)
-echo "{\"timestamp\":\"$timestamp\",\"host\":\"$host\",\"module\":\"network_audit\",\"open_ports\":\"$total_ports\"}" >> "$LOG_FILE"
+echo "{\"timestamp\":\"$timestamp\",\"host\":\"$host\",\"module\":\"network_audit\",\"severity\":\"INFO\",\"message\":\"Network audit check complete\",\"open_ports\":\"$total_ports\"}" >> "$LOG_FILE"
 
 # --- 5. Alertes: Ports non autorisés ---
 while read line; do
