@@ -151,6 +151,28 @@
         };
         ws.onmessage = (event) => {
             const data = JSON.parse(event.data);
+
+            if (data.command === "clear") {
+                clearAlerts();
+                document.getElementById('stat-system').innerText = "STABLE";
+                document.getElementById('stat-system').className = "text-lg font-bold text-green-500";
+                document.getElementById('stat-users').innerText = "0";
+                document.getElementById('stat-users').className = "text-lg font-bold text-white";
+                document.getElementById('stat-network').innerText = "--";
+                document.getElementById('stat-fim').innerText = "SECURE";
+                document.getElementById('stat-fim').className = "text-lg font-bold text-green-500";
+                document.getElementById('process-table').innerHTML = '<tr><td colspan="5" class="py-4 text-center text-gray-600 italic">Waiting for data...</td></tr>';
+                metricsChart.data.labels = [];
+                metricsChart.data.datasets[0].data = [];
+                metricsChart.data.datasets[1].data = [];
+                metricsChart.update();
+                diskChart.data.datasets[0].data = [0, 100];
+                diskChart.data.datasets[0].backgroundColor[0] = '#10b981';
+                diskChart.update();
+                document.getElementById('disk-label').innerText = '0%';
+                return;
+            }
+
             alertHistory.unshift(data);
             if (alertHistory.length > MAX_ALERTS) alertHistory.pop();
             if (data.severity === 'CRITICAL') playAlert();
