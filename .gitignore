@@ -18,3 +18,4 @@ __pycache__/
 # Ignore Logs locaux
 # =========================
 *.log
+wiki/
