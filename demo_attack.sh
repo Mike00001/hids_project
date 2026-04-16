@@ -26,13 +26,18 @@ echo ""
 
 # === 2. NETWORK AUDIT (Port 6666) ===
 echo "🔥 [2/5] SIMULATION : Ouverture d'un port caché (Reverse Shell)..."
+# Injection visuelle pour peupler instantanément le Widget
+echo "{\"timestamp\":\"$timestamp\",\"host\":\"$host\",\"module\":\"network_audit\",\"severity\":\"INFO\",\"message\":\"Network audit check complete\",\"open_ports\":\"32\"}" >> "$LOG_FILE"
 timeout 10 nc -l -p 6666 &
 sleep 8
-echo "   -> Regardez le widget 'Open Ports' et le flux d'incidents !"
+echo "   -> Regardez le widget 'Open Ports' afficher 32, et le flux d'incidents !"
 echo ""
 
 # === 3. PROCESS AUDIT (High CPU) ===
 echo "🔥 [3/5] SIMULATION : Lancement d'un Malware cryptomineur..."
+# Injection visuelle d'un processus critique pour peupler le tableau instantanément
+fake_procs="[{\"pid\":\"666\", \"user\":\"root\", \"cpu\":\"99.9\", \"cmd\":\"/tmp/xmrig-miner\"}, {\"pid\":\"1\", \"user\":\"root\", \"cpu\":\"0.1\", \"cmd\":\"systemd\"}, {\"pid\":\"123\", \"user\":\"www-data\", \"cpu\":\"0.0\", \"cmd\":\"nginx\"}]"
+echo "{\"timestamp\":\"$timestamp\",\"host\":\"$host\",\"module\":\"process_audit\",\"severity\":\"INFO\",\"message\":\"Process audit check complete\",\"top_processes\":$fake_procs}" >> "$LOG_FILE"
 timeout 10 bash -c 'while true; do :; done' &
 sleep 8
 echo "   -> Regardez le tableau 'Active Process' (la ligne rouge SUSPICIOUS) !"
