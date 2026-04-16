@@ -13,12 +13,17 @@ mkdir -p "$BASELINE_DIR"
 send_alert() {
     local severity=$1
     local message=$2
+    local extra=$3
     local timestamp=$(date +"%Y-%m-%d %H:%M:%S")
     local host=$(hostname)
 
     local safe_message=$(echo "$message" | sed 's/"/\\"/g')
 
-    echo "{\"timestamp\":\"$timestamp\",\"host\":\"$host\",\"module\":\"file_integrity\",\"severity\":\"$severity\",\"message\":\"$safe_message\"}" >> "$LOG_FILE"
+    if [ -n "$extra" ]; then
+        echo "{\"timestamp\":\"$timestamp\",\"host\":\"$host\",\"module\":\"file_integrity\",\"severity\":\"$severity\",\"message\":\"$safe_message\",$extra}" >> "$LOG_FILE"
+    else
+        echo "{\"timestamp\":\"$timestamp\",\"host\":\"$host\",\"module\":\"file_integrity\",\"severity\":\"$severity\",\"message\":\"$safe_message\"}" >> "$LOG_FILE"
+    fi
 }
 
 # ============================================
@@ -40,7 +45,7 @@ for file in $CRITICAL_FILES; do
     fi
 
     if [ "$(sha256sum "$file")" != "$(cat "$base")" ]; then
-        send_alert "CRITICAL" "Modified: $file"
+        send_alert "CRITICAL" "Modified: $file" "\"status\":\"MODIFIED\""
     fi
 done
 

@@ -122,7 +122,7 @@
                 { label: 'CPU', data: [], borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', fill: true, tension: 0.4 },
                 { label: 'RAM', data: [], borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', fill: true, tension: 0.4 }
             ]},
-            options: { responsive: true, scales: { y: { beginAtZero: true, max: 100, grid: { color: '#374151' } }, x: { grid: { display: false } } } }
+            options: { responsive: true, scales: { y: { beginAtZero: true, grid: { color: '#374151' } }, x: { grid: { display: false } } } }
         });
         const diskChart = new Chart(document.getElementById('diskChart'), {
             type: 'doughnut',
