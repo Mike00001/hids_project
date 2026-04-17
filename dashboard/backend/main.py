@@ -34,8 +34,6 @@ async def websocket_endpoint(websocket: WebSocket):
     demo_mode = False 
 
     # --- CHARGEMENT DE L'HISTORIQUE AU DÉMARRAGE ---
-    # On charge les 100 dernières lignes pour être sûr de capter les infos
-    # des modules qui s'exécutent moins souvent (comme process_audit)
     try:
         with open(LOG_FILE, "r") as f:
             lines = f.readlines()
@@ -48,7 +46,6 @@ async def websocket_endpoint(websocket: WebSocket):
     try:
         while True:
             with open(LOG_FILE, "r") as f:
-                # On va à la fin du fichier pour écouter les NOUVEAUX logs
                 f.seek(0, os.SEEK_END)
                 last_size = os.path.getsize(LOG_FILE)
                 
@@ -57,8 +54,8 @@ async def websocket_endpoint(websocket: WebSocket):
                     
                     # SI LE FICHIER A ÉTÉ VIDÉ (TRUNCATE)
                     if current_size < last_size:
-                        demo_mode = False # SÉCURITÉ : Annule le mode démo si on vide le log
-                        break # On sort du 'with' pour réouvrir le fichier au début
+                        demo_mode = False 
+                        break 
 
                     line = f.readline()
                     if not line:
@@ -78,12 +75,10 @@ async def websocket_endpoint(websocket: WebSocket):
                                 demo_mode = False
                                 continue
                                 
-                            # LE FILTRE MAGIQUE : 
-                            # Si on est en démo, on ignore les logs qui n'ont pas la balise "is_demo"
+                            # LE FILTRE MAGIQUE
                             if demo_mode and not payload.get("is_demo"):
                                 continue
 
-                            # On envoie la donnée au navigateur
                             await websocket.send_json(payload)
                         except:
                             pass
