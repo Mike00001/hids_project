@@ -1,123 +1,138 @@
-#!/bin/bash
-# =========================================================
-# SENTINEL HIDS - Professional Attack & Recovery Simulation
-# =========================================================
+import json
+import os
+import time
+from datetime import datetime
 
 # --- CONFIGURATION ---
-# Assure-toi que ce chemin est correct sur ton Trigkey
-LOG_FILE="/opt/hids-project/hids_project/dashboard/test_logs/hids_system.log"
-HOST=$(hostname)
+LOG_PATH = "/opt/hids-project/hids_project/dashboard/test_logs/hids_system.log"
+HOST = "hids-server-01"
 
-# Terminal Colors
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-BLUE='\033[0;34m'
-YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+# ANSI Colors for Terminal Output
+class Colors:
+    BLUE = '\033[94m'
+    GREEN = '\033[92m'
+    YELLOW = '\033[93m'
+    RED = '\033[91m'
+    BOLD = '\033[1m'
+    END = '\033[0m'
 
-# Helper: Dynamic Timestamp
-get_ts() { date +"%Y-%m-%d %H:%M:%S"; }
+def get_timestamp():
+    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-# Helper: Typewriter Effect
-type_text() {
-    local text="$1"
-    for (( i=0; i<${#text}; i++ )); do
-        echo -ne "${text:$i:1}"
-        sleep 0.03
-    done
-    echo ""
-}
+def write_log(data):
+    """Writes a single JSON line to the log file."""
+    with open(LOG_PATH, "a") as f:
+        f.write(json.dumps(data) + "\n")
 
-clear
-echo -e "${BLUE}=====================================================${NC}"
-echo -e "${BLUE}   SENTINEL HIDS - ENTERPRISE THREAT SIMULATOR       ${NC}"
-echo -e "${BLUE}=====================================================${NC}"
-echo -e "${YELLOW}[SYSTEM] Target Host: $HOST${NC}"
-echo ""
+def clear_logs():
+    """Truncates the log file to zero."""
+    open(LOG_PATH, 'w').close()
 
-# --- STEP 0: INITIALIZATION ---
-echo -e "${YELLOW}[*] Initializing Demo Environment...${NC}"
-# Flush the log file and the frontend UI
-sudo truncate -s 0 "$LOG_FILE"
-echo "{\"command\":\"clear\"}" >> "$LOG_FILE"
-type_text "[-] Flushing remote dashboard memory... SUCCESS"
-type_text "[-] Synchronizing telemetry clocks... SUCCESS"
-echo -e "${GREEN}[+] Ready for live demonstration.${NC}"
-sleep 3
+def wait_for_user(step_name):
+    print(f"\n{Colors.YELLOW}[ACTION REQUIRED]{Colors.END}")
+    print(f"{Colors.BOLD}1. Refresh your browser (F5){Colors.END} to see the {step_name} result.")
+    input(f"{Colors.BOLD}2. Press [ENTER]{Colors.END} to move to the next stage...")
 
-# --- STEP 1: RESOURCE EXHAUSTION (System Health) ---
-echo -e "\n${RED}[!] STAGE 1: Resource Exhaustion (DoS Attack)${NC}"
-type_text "> Executing memory leak payload and fork bomb simulation..."
-echo "{\"timestamp\":\"$(get_ts)\",\"host\":\"$HOST\",\"module\":\"system_health\",\"status\":\"CRITICAL\",\"severity\":\"CRITICAL\",\"load\":14.20,\"memory\":98,\"disk\":96,\"message\":\"Critical resource exhaustion: CPU Load Average exceeded threshold (14.20)\"}" >> "$LOG_FILE"
-echo -e "${BLUE}   [Action] Note the 'Avg System Load' jumping to 14.20 and the graph spike.${NC}"
-sleep 6
+# --- DEMO SEQUENCE ---
 
-# --- STEP 2: NETWORK PERSISTENCE (Network Audit) ---
-echo -e "\n${RED}[!] STAGE 2: Establishing Network Persistence${NC}"
-type_text "> Opening covert listener (Reverse Shell) on port 6666..."
-timeout 10 nc -l -p 6666 &
-echo "{\"timestamp\":\"$(get_ts)\",\"host\":\"$HOST\",\"module\":\"network_audit\",\"severity\":\"CRITICAL\",\"message\":\"Unauthorized network listener detected on port 6666\",\"open_ports\":32}" >> "$LOG_FILE"
-echo -e "${BLUE}   [Action] Watch the 'Network Exposure' widget update to 32 active ports.${NC}"
-sleep 6
+def run_demo():
+    os.system('clear')
+    print(f"{Colors.BLUE}====================================================={Colors.END}")
+    print(f"{Colors.BLUE}   SENTINEL HIDS - GUIDED DEMONSTRATION (PYTHON)     {Colors.END}")
+    print(f"{Colors.BLUE}====================================================={Colors.END}")
 
-# --- STEP 3: MALWARE EXECUTION (Process Audit) ---
-echo -e "\n${RED}[!] STAGE 3: Malicious Process Deployment${NC}"
-type_text "> Launching cryptojacker binary: /tmp/.hidden/xmrig..."
-fake_procs="[{\"pid\":\"666\", \"user\":\"root\", \"cpu\":99.9, \"cmd\":\"/tmp/.hidden/xmrig -o pool.monero.org\"}, {\"pid\":\"1201\", \"user\":\"m\", \"cpu\":0.5, \"cmd\":\"uvicorn\"}, {\"pid\":\"42\", \"user\":\"root\", \"cpu\":0.0, \"cmd\":\"kworker/u2:0\"}]"
-echo "{\"timestamp\":\"$(get_ts)\",\"host\":\"$HOST\",\"module\":\"process_audit\",\"severity\":\"CRITICAL\",\"message\":\"High-risk anomaly detected: Suspicious binary executing from /tmp\",\"top_processes\":$fake_procs}" >> "$LOG_FILE"
-echo -e "${BLUE}   [Action] See the 'ANOMALY' tag in the Process Inspection table.${NC}"
-sleep 6
+    # STEP 0: INITIALIZATION
+    print(f"\n{Colors.GREEN}[*] STAGE 0: SYSTEM INITIALIZATION{Colors.END}")
+    clear_logs()
+    write_log({"command": "clear"})
+    print("[-] Logs truncated. 'Clear' signal sent to dashboard pipeline.")
+    wait_for_user("CLEAN DASHBOARD")
 
-# --- STEP 4: BRUTE FORCE & PRIVILEGE ESCALATION (User Activity) ---
-echo -e "\n${RED}[!] STAGE 4: Credential Brute-Force & Privilege Escalation${NC}"
-type_text "> Infiltrating SSH subsystem... Injecting failed auth logs..."
-for i in {1..5}; do
-    sudo bash -c 'echo "$(date +"%b %_d %H:%M:%S") $(hostname) sshd[1234]: Failed password for invalid user admin from 10.0.0.50" >> /var/log/auth.log'
-done
-echo "{\"timestamp\":\"$(get_ts)\",\"host\":\"$HOST\",\"module\":\"user_activity\",\"severity\":\"WARNING\",\"message\":\"High volume of failed login attempts detected\",\"failed_attempts\":25}" >> "$LOG_FILE"
-echo -e "${BLUE}   [Action] The 'Failed Auth' KPI is now RED (25 attempts).${NC}"
-sleep 6
+    # STEP 1: RESOURCE EXHAUSTION
+    print(f"\n{Colors.RED}[!] STAGE 1: RESOURCE EXHAUSTION (DoS ATTACK){Colors.END}")
+    attack_data = {
+        "timestamp": get_timestamp(),
+        "host": HOST,
+        "module": "system_health",
+        "status": "CRITICAL",
+        "severity": "CRITICAL",
+        "load": 14.85,
+        "memory": 92,
+        "disk": 95,
+        "message": "Critical CPU Load Detected: System instability imminent"
+    }
+    write_log(attack_data)
+    print(f"[-] Injected System Health Critical Alert (Load: 14.85)")
+    wait_for_user("SYSTEM LOAD SPIKE")
 
-# --- STEP 5: FILE INTEGRITY BREACH (FIM) ---
-echo -e "\n${RED}[!] STAGE 5: Host Integrity Compromise (FIM)${NC}"
-type_text "> Modifying sensitive system files... Dropping backdoor..."
-sudo touch /etc/hacker.conf
-echo "{\"timestamp\":\"$(get_ts)\",\"host\":\"$HOST\",\"module\":\"file_integrity\",\"status\":\"MODIFIED\",\"severity\":\"CRITICAL\",\"message\":\"Integrity Violation: Unauthorized file creation in /etc/ directory\"}" >> "$LOG_FILE"
-echo -e "${BLUE}   [Action] FIM Status: 'COMPROMISED'. System integrity is lost.${NC}"
-sleep 6
+    # STEP 2: FILE INTEGRITY BREACH
+    print(f"\n{Colors.RED}[!] STAGE 2: FILE INTEGRITY BREACH (FIM){Colors.END}")
+    # Simulate a real file change for the demo
+    os.system("sudo touch /etc/hacker_config.bak")
+    fim_data = {
+        "timestamp": get_timestamp(),
+        "host": HOST,
+        "module": "file_integrity",
+        "status": "MODIFIED",
+        "severity": "CRITICAL",
+        "message": "FIM Violation: Unauthorized write access in /etc/"
+    }
+    write_log(fim_data)
+    print("[-] Created /etc/hacker_config.bak and injected FIM Alert.")
+    wait_for_user("FIM RED STATUS")
 
-# --- FINAL PHASE ---
-echo -e "\n${GREEN}=====================================================${NC}"
-echo -e "${GREEN}        THREAT SIMULATION COMPLETE - NODE OWNED      ${NC}"
-echo -e "${GREEN}=====================================================${NC}"
-echo "Press ENTER to start the Automated Recovery Sequence..."
-read
+    # STEP 3: NETWORK PERSISTENCE
+    print(f"\n{Colors.RED}[!] STAGE 3: COVERT NETWORK CHANNEL{Colors.END}")
+    net_data = {
+        "timestamp": get_timestamp(),
+        "host": HOST,
+        "module": "network_audit",
+        "severity": "CRITICAL",
+        "message": "Suspicious listener detected on unauthorized port 6666",
+        "open_ports": 32
+    }
+    write_log(net_data)
+    print("[-] Injected Network Audit Alert (32 open ports).")
+    wait_for_user("NETWORK EXPOSURE")
 
-# --- ADVANCED CLEANUP & RECOVERY ---
-echo -e "\n${YELLOW}[*] Critical Recovery Sequence Initiated...${NC}"
+    # STEP 4: AUTOMATED RECOVERY
+    print(f"\n{Colors.GREEN}[*] STAGE 4: INCIDENT RESPONSE & RECOVERY{Colors.END}")
+    os.system("sudo rm -f /etc/hacker_config.bak")
+    clear_logs() # Wipe the "malicious" logs
+    
+    # Inject healthy baseline
+    recovery_ts = get_timestamp()
+    health_recovery = {
+        "timestamp": recovery_ts,
+        "host": HOST,
+        "module": "system_health",
+        "status": "OK",
+        "severity": "INFO",
+        "load": 0.05,
+        "memory": 8,
+        "disk": 2,
+        "message": "Baseline restored: all systems nominal"
+    }
+    fim_recovery = {
+        "timestamp": recovery_ts,
+        "host": HOST,
+        "module": "file_integrity",
+        "status": "SECURE",
+        "severity": "INFO",
+        "message": "Integrity check passed: system files verified"
+    }
+    write_log(health_recovery)
+    write_log(fim_recovery)
+    
+    print("[-] Attack traces removed. Health signals restored to baseline.")
+    wait_for_user("RECOVERY (GREEN DASHBOARD)")
 
-# 1. Terminate attack processes
-sudo pkill -f "nc -l -p 6666"
-type_text "[-] Terminating malicious listeners and payloads... DONE"
+    print(f"\n{Colors.BLUE}====================================================={Colors.END}")
+    print(f"{Colors.BLUE}   DEMONSTRATION COMPLETE - SYSTEM SECURED           {Colors.END}")
+    print(f"{Colors.BLUE}====================================================={Colors.END}")
 
-# 2. Restore System state
-sudo rm -f /etc/hacker.conf
-sudo truncate -s 0 /var/log/auth.log
-type_text "[-] Restoring system file integrity & rotating auth logs... DONE"
-
-# 3. Wipe HIDS Logs
-sudo truncate -s 0 "$LOG_FILE"
-type_text "[-] Purging HIDS telemetry buffer... DONE"
-
-# 4. Inject Recovery Signals (Force the Dashboard to turn green)
-TS=$(get_ts)
-echo "{\"timestamp\":\"$TS\",\"host\":\"$HOST\",\"module\":\"system_health\",\"status\":\"OK\",\"severity\":\"INFO\",\"load\":0.04,\"memory\":5,\"disk\":2,\"message\":\"Recovery complete: System load back to baseline\"}" >> "$LOG_FILE"
-echo "{\"timestamp\":\"$TS\",\"host\":\"$HOST\",\"module\":\"file_integrity\",\"status\":\"SECURE\",\"severity\":\"INFO\",\"message\":\"Integrity baseline verified: All files match cryptographic hash\"}" >> "$LOG_FILE"
-echo "{\"timestamp\":\"$TS\",\"host\":\"$HOST\",\"module\":\"user_activity\",\"severity\":\"INFO\",\"message\":\"Login monitor reset: No suspicious activity\",\"failed_attempts\":0}" >> "$LOG_FILE"
-echo "{\"timestamp\":\"$TS\",\"host\":\"$HOST\",\"module\":\"network_audit\",\"severity\":\"INFO\",\"message\":\"Network policy enforced: Only authorized ports open\",\"open_ports\":12}" >> "$LOG_FILE"
-
-# 5. Clear the Incident Stream
-echo "{\"command\":\"clear\"}" >> "$LOG_FILE"
-
-type_text "[-] Hardening system baseline... DONE"
-echo -e "\n${BLUE}[+200 OK] System Baseline Restored. Control Plane Secured.${NC}"
+if __name__ == "__main__":
+    try:
+        run_demo()
+    except KeyboardInterrupt:
+        print("\nDemo aborted by user.")
