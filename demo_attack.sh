@@ -2,7 +2,6 @@
 import json
 import os
 import subprocess
-import time
 from datetime import datetime
 
 # --- CONFIGURATION ---
@@ -19,16 +18,11 @@ def write_log(data):
     with open(LOG_PATH, "a") as f:
         f.write(json.dumps(data) + "\n")
 
-# --- FONCTION ANTI-FREEZE ---
-def wait_enter(action_text):
-    print(f"\n{Colors.BOLD}[Press ENTER {action_text}]{Colors.END}")
-    input() # Attente pure sans texte caché qui fait bugger le terminal
-
 def toggle_monitoring(status):
     if status == "OFF":
         print(f"{Colors.YELLOW}[*] SILENCING REAL-TIME MONITORING...{Colors.END}")
-        os.system("sudo pkill -9 -f 'main_json.sh'")
-        os.system("sudo pkill -9 -f '_json.sh'")
+        os.system("sudo pkill -9 -f 'main_json.sh' > /dev/null 2>&1")
+        os.system("sudo pkill -9 -f '_json.sh' > /dev/null 2>&1")
         if os.path.exists(REAL_MONITOR):
             os.system(f"sudo mv {REAL_MONITOR} {REAL_MONITOR}.bak")
         print(f"{Colors.GREEN}[+] System is now muted. No background noise allowed.{Colors.END}")
@@ -36,7 +30,19 @@ def toggle_monitoring(status):
         print(f"\n{Colors.GREEN}[*] RESTORING REAL-TIME MONITORING...{Colors.END}")
         if os.path.exists(REAL_MONITOR + ".bak"):
             os.system(f"sudo mv {REAL_MONITOR}.bak {REAL_MONITOR}")
-        subprocess.Popen(["sudo", "bash", REAL_MONITOR], stdout=open(os.devnull, 'w'), stderr=open(os.devnull, 'w'))
+        
+        # LA CORRECTION EST ICI : On coupe l'accès au clavier (stdin)
+        subprocess.Popen(
+            ["sudo", "bash", REAL_MONITOR], 
+            stdin=subprocess.DEVNULL, 
+            stdout=subprocess.DEVNULL, 
+            stderr=subprocess.DEVNULL,
+            start_new_session=True
+        )
+
+def wait_enter(action_text):
+    print(f"\n{Colors.BOLD}[Press ENTER {action_text}]{Colors.END}")
+    input()
 
 def run_demo():
     os.system('clear')
