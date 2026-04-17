@@ -1,94 +1,144 @@
-#!/bin/bash
+#!/usr/bin/env python3
+import json
+import os
+from datetime import datetime
 
 # --- CONFIGURATION ---
-LOG_FILE="/opt/hids-project/hids_project/dashboard/test_logs/hids_system.log"
-REAL_MONITOR="/opt/hids-project/hids_project/Modules_JSON/main_json.sh"
-HOST="hids-server-01"
+LOG_PATH = "/opt/hids-project/hids_project/dashboard/test_logs/hids_system.log"
+REAL_MONITOR = "/opt/hids-project/hids_project/Modules_JSON/main_json.sh"
+HOST = "hids-server-01"
 
-# Couleurs
-GREEN='\033[0;32m'
-RED='\033[0;31m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m'
+class Colors:
+    BLUE = '\033[94m'; GREEN = '\033[92m'; YELLOW = '\033[93m'; RED = '\033[91m'; BOLD = '\033[1m'; END = '\033[0m'
 
-get_ts() { date +"%Y-%m-%d %H:%M:%S"; }
+def get_ts():
+    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-clear
-echo -e "${BLUE}=====================================================${NC}"
-echo -e "${BLUE}   SENTINEL HIDS - BULLETPROOF DEMO SCRIPT           ${NC}"
-echo -e "${BLUE}=====================================================${NC}"
+def write_log(data):
+    with open(LOG_PATH, "a") as f:
+        f.write(json.dumps(data) + "\n")
 
-# --- 1. MUTE DES VRAIS SCRIPTS ---
-echo -e "${YELLOW}[*] Silencing real-time monitoring...${NC}"
-if [ -f "$REAL_MONITOR" ]; then
-    sudo mv "$REAL_MONITOR" "${REAL_MONITOR}.bak"
-fi
-sudo pkill -9 -f 'main_json.sh' >/dev/null 2>&1
-sudo pkill -9 -f '_json.sh' >/dev/null 2>&1
-echo -e "${GREEN}[+] System muted.${NC}"
+def clear_logs():
+    open(LOG_PATH, 'w').close()
 
-# --- 2. STAGE 0 : INIT ---
-> "$LOG_FILE"
-echo '{"command": "clear"}' >> "$LOG_FILE"
+# --- NOUVELLES FONCTIONS DE SOURDINE (Sécurisées) ---
+def mute_monitoring():
+    print(f"{Colors.YELLOW}[*] Silencing background monitoring...{Colors.END}")
+    # On renomme le script pour éviter qu'il ne se relance
+    os.system(f"sudo mv {REAL_MONITOR} {REAL_MONITOR}.bak 2>/dev/null")
+    # On tue les processus violemment
+    os.system("sudo pkill -9 -f 'main_json.sh' >/dev/null 2>&1")
+    os.system("sudo pkill -9 -f '_json.sh' >/dev/null 2>&1")
 
-echo -e "\n${YELLOW}>>> BROWSER ACTION: REFRESH (F5) NOW.${NC}"
-echo "PRESENTER: 'As we begin, the dashboard is empty, representing a secure baseline.'"
-echo ""
-read -p "=> Press [ENTER] to launch Stage 1 (DoS)... "
+def unmute_monitoring():
+    print(f"{Colors.GREEN}[*] Restoring background monitoring...{Colors.END}")
+    # On remet le script à son nom d'origine
+    os.system(f"sudo mv {REAL_MONITOR}.bak {REAL_MONITOR} 2>/dev/null")
+    # On le relance de manière totalement détachée pour ne pas bloquer Python
+    os.system(f"sudo nohup bash {REAL_MONITOR} >/dev/null 2>&1 &")
 
-# --- 3. STAGE 1 : DOS ---
-TS=$(get_ts)
-echo "{\"timestamp\":\"$TS\",\"host\":\"$HOST\",\"module\":\"system_health\",\"status\":\"CRITICAL\",\"severity\":\"CRITICAL\",\"load\":14.85,\"memory\":92,\"disk\":95,\"message\":\"Critical CPU Load: Potential DoS\"}" >> "$LOG_FILE"
+def run_demo():
+    os.system('clear')
+    print(f"{Colors.BLUE}====================================================={Colors.END}")
+    print(f"{Colors.BLUE}   SENTINEL HIDS - FULL 5-MODULE DEMO SEQUENCE       {Colors.END}")
+    print(f"{Colors.BLUE}====================================================={Colors.END}")
 
-echo -e "\n${RED}[!] STAGE 1 INJECTED.${NC}"
-echo "PRESENTER: 'Stage 1: A DoS attack targets the node. Notice the System Load KPI jumping to 14.85.'"
-read -p "=> Press [ENTER] to launch Stage 2 (Malware)... "
+    # --- STAGE 0: INITIALIZATION ---
+    print(f"\n{Colors.GREEN}[*] STAGE 0: INITIALIZATION{Colors.END}")
+    mute_monitoring() # Application de la sourdine
+    clear_logs()
+    write_log({"command": "clear"})
+    print(f"{Colors.YELLOW}>>> ACTION: Refresh your browser (F5) NOW to start clean.{Colors.END}")
+    print(f"\n{Colors.BOLD}PRESENTER NOTES:{Colors.END}")
+    print(" - 'Welcome to the Sentinel HIDS demonstration.'")
+    print(" - 'Our dashboard is clean, and all security modules are in a VERIFIED state.'")
+    input(f"\n{Colors.BOLD}Press [ENTER] to start Module 1...{Colors.END}")
 
-# --- 4. STAGE 2 : PROCESS ---
-TS=$(get_ts)
-echo "{\"timestamp\":\"$TS\",\"host\":\"$HOST\",\"module\":\"process_audit\",\"severity\":\"CRITICAL\",\"message\":\"High-risk anomaly: Miner identified\",\"top_processes\":[{\"pid\":\"666\",\"user\":\"root\",\"cpu\":99.9,\"cmd\":\"/tmp/.hidden/miner\"}]}" >> "$LOG_FILE"
+    # --- STAGE 1: SYSTEM HEALTH (KPI 1) ---
+    print(f"\n{Colors.RED}[!] STAGE 1: DOS ATTACK (System Health){Colors.END}")
+    write_log({
+        "timestamp": get_ts(), "host": HOST, "module": "system_health",
+        "status": "CRITICAL", "severity": "CRITICAL", "load": 14.85, "memory": 92, "disk": 95,
+        "message": "Critical CPU Load: Denial of Service attack suspected"
+    })
+    print(f"\n{Colors.BOLD}PRESENTER NOTES:{Colors.END}")
+    print(" - 'First, we simulate a DoS attack. Notice the System Load KPI jumping to 14.85.'")
+    print(" - 'The real-time telemetry chart instantly reflects this resource exhaustion.'")
+    input(f"\n{Colors.BOLD}Press [ENTER] for Module 2...{Colors.END}")
 
-echo -e "\n${RED}[!] STAGE 2 INJECTED.${NC}"
-echo "PRESENTER: 'Stage 2: We detect a high-risk process. A miner is running as root.'"
-read -p "=> Press [ENTER] to launch Stage 3 (Network)... "
+    # --- STAGE 2: PROCESS AUDIT (Table) ---
+    print(f"\n{Colors.RED}[!] STAGE 2: MALWARE DETECTION (Process Audit){Colors.END}")
+    fake_procs = [
+        {"pid": "666", "user": "root", "cpu": 99.9, "cmd": "/tmp/.hidden/miner_pro"},
+        {"pid": "1201", "user": "m", "cpu": 0.5, "cmd": "uvicorn"}
+    ]
+    write_log({
+        "timestamp": get_ts(), "host": HOST, "module": "process_audit",
+        "severity": "CRITICAL", "message": "High-risk anomaly: Unsigned binary in /tmp",
+        "top_processes": fake_procs
+    })
+    print(f"\n{Colors.BOLD}PRESENTER NOTES:{Colors.END}")
+    print(" - 'Now, look at the Process Inspection Table. A malicious cryptominer has been detected.'")
+    print(" - 'It is flagged as an ANOMALY because it is running as root with 99% CPU usage.'")
+    input(f"\n{Colors.BOLD}Press [ENTER] for Module 3...{Colors.END}")
 
-# --- 5. STAGE 3 : NETWORK ---
-TS=$(get_ts)
-echo "{\"timestamp\":\"$TS\",\"host\":\"$HOST\",\"module\":\"network_audit\",\"severity\":\"CRITICAL\",\"message\":\"Unauthorized port listener: 6666\",\"open_ports\":32}" >> "$LOG_FILE"
+    # --- STAGE 3: NETWORK AUDIT (KPI 3) ---
+    print(f"\n{Colors.RED}[!] STAGE 3: COVERT CHANNEL (Network Audit){Colors.END}")
+    write_log({
+        "timestamp": get_ts(), "host": HOST, "module": "network_audit",
+        "severity": "CRITICAL", "message": "Unauthorized listener on port 6666",
+        "open_ports": 32
+    })
+    print(f"\n{Colors.BOLD}PRESENTER NOTES:{Colors.END}")
+    print(" - 'The attacker opens a back-door on port 6666.'")
+    print(" - 'The Network Exposure widget updates to 32 ports, identifying a surface breach.'")
+    input(f"\n{Colors.BOLD}Press [ENTER] for Module 4...{Colors.END}")
 
-echo -e "\n${RED}[!] STAGE 3 INJECTED.${NC}"
-echo "PRESENTER: 'Stage 3: The attacker attempts to establish persistence. Suspicious listener on port 6666.'"
-read -p "=> Press [ENTER] to launch Stage 4 (Brute Force)... "
+    # --- STAGE 4: USER ACTIVITY (KPI 2) ---
+    print(f"\n{Colors.RED}[!] STAGE 4: BRUTE FORCE (User Activity){Colors.END}")
+    write_log({
+        "timestamp": get_ts(), "host": HOST, "module": "user_activity",
+        "severity": "WARNING", "message": "Massive failed login attempts on SSH",
+        "failed_attempts": 25
+    })
+    print(f"\n{Colors.BOLD}PRESENTER NOTES:{Colors.END}")
+    print(" - 'We are now seeing a brute-force attack on the SSH service.'")
+    print(" - 'The Failed Auth KPI turns red as it records 25 failed attempts from a single IP.'")
+    input(f"\n{Colors.BOLD}Press [ENTER] for Module 5...{Colors.END}")
 
-# --- 6. STAGE 4 : USER ACTIVITY ---
-TS=$(get_ts)
-echo "{\"timestamp\":\"$TS\",\"host\":\"$HOST\",\"module\":\"user_activity\",\"severity\":\"WARNING\",\"message\":\"SSH Brute-force detected\",\"failed_attempts\":25}" >> "$LOG_FILE"
+    # --- STAGE 5: FILE INTEGRITY (KPI 4) ---
+    print(f"\n{Colors.RED}[!] STAGE 5: INTEGRITY BREACH (FIM){Colors.END}")
+    os.system("sudo touch /etc/hacker_config.bak")
+    write_log({
+        "timestamp": get_ts(), "host": HOST, "module": "file_integrity",
+        "status": "MODIFIED", "severity": "CRITICAL", "message": "Unauthorized modification in /etc/"
+    })
+    print(f"\n{Colors.BOLD}PRESENTER NOTES:{Colors.END}")
+    print(" - 'Finally, the attacker tries to modify system files in the /etc directory.'")
+    print(" - 'The Host Integrity (FIM) module immediately switches the global state to COMPROMISED.'")
+    input(f"\n{Colors.BOLD}Press [ENTER] for Cleanup & Final Recovery...{Colors.END}")
 
-echo -e "\n${RED}[!] STAGE 4 INJECTED.${NC}"
-echo "PRESENTER: 'Stage 4: Simultaneously, a brute-force attack on SSH. 25 failed attempts recorded.'"
-read -p "=> Press [ENTER] to launch Stage 5 (FIM)... "
+    # --- STAGE 6: CLEANUP ---
+    print(f"\n{Colors.GREEN}[*] STAGE 6: RECOVERY{Colors.END}")
+    os.system("sudo rm -f /etc/hacker_config.bak")
+    clear_logs()
+    
+    ts = get_ts()
+    # Inject Green Baseline for next F5
+    write_log({"timestamp": ts, "host": HOST, "module": "system_health", "status": "OK", "severity": "INFO", "load": 0.05, "memory": 8, "disk": 2, "message": "Baseline restored"})
+    write_log({"timestamp": ts, "host": HOST, "module": "file_integrity", "status": "SECURE", "severity": "INFO", "message": "Integrity verified"})
+    write_log({"timestamp": ts, "host": HOST, "module": "user_activity", "severity": "INFO", "failed_attempts": 0, "message": "Auth logs rotated"})
+    
+    unmute_monitoring() # Fin de la sourdine
+    
+    print(f"\n{Colors.YELLOW}>>> ACTION: Final Refresh (F5) NOW to restore the Dashboard baseline.{Colors.END}")
+    print(f"\n{Colors.BOLD}PRESENTER NOTES:{Colors.END}")
+    print(" - 'The threat has been mitigated. We have sanitized the environment and restored the baseline.'")
+    print(" - 'Sentinel HIDS is back to its secure state. Thank you for your attention.'")
+    input(f"\n{Colors.BOLD}Press [ENTER] to exit.{Colors.END}")
 
-# --- 7. STAGE 5 : FIM ---
-TS=$(get_ts)
-echo "{\"timestamp\":\"$TS\",\"host\":\"$HOST\",\"module\":\"file_integrity\",\"status\":\"MODIFIED\",\"severity\":\"CRITICAL\",\"message\":\"FIM Violation in /etc/shadow\"}" >> "$LOG_FILE"
-
-echo -e "\n${RED}[!] STAGE 5 INJECTED.${NC}"
-echo "PRESENTER: 'Stage 5: A critical system file is modified. Integrity Health switches to COMPROMISED.'"
-read -p "=> Press [ENTER] to CLEANUP & RECOVER... "
-
-# --- 8. RECOVERY & UNMUTE ---
-echo -e "\n${YELLOW}[*] Recovery sequence initiated...${NC}"
-> "$LOG_FILE"
-TS=$(get_ts)
-echo "{\"timestamp\":\"$TS\",\"host\":\"$HOST\",\"module\":\"system_health\",\"status\":\"OK\",\"severity\":\"INFO\",\"load\":0.05,\"memory\":5,\"disk\":2,\"message\":\"Recovery complete\"}" >> "$LOG_FILE"
-echo "{\"timestamp\":\"$TS\",\"host\":\"$HOST\",\"module\":\"file_integrity\",\"status\":\"SECURE\",\"severity\":\"INFO\",\"message\":\"Baseline restored\"}" >> "$LOG_FILE"
-
-if [ -f "${REAL_MONITOR}.bak" ]; then
-    sudo mv "${REAL_MONITOR}.bak" "$REAL_MONITOR"
-fi
-sudo nohup bash "$REAL_MONITOR" >/dev/null 2>&1 &
-
-echo -e "\n${YELLOW}>>> BROWSER ACTION: FINAL REFRESH (F5) NOW.${NC}"
-echo "PRESENTER: 'The incident is resolved. Malicious traces are removed, and the baseline is restored. The system is secure again.'"
-echo -e "${GREEN}Demo finished!${NC}"
+if __name__ == "__main__":
+    try:
+        run_demo()
+    except KeyboardInterrupt:
+        unmute_monitoring()
