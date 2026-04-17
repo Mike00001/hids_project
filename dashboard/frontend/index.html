@@ -6,35 +6,67 @@
     <title>Sentinel HIDS | Management Console</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
-        .card { background: white; border: 1px solid #e2e8f0; }
-        .incident-card { border-left: 4px solid #6366f1; }
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #0f172a; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        .card { background: white; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .incident-card { border-left: 4px solid #4f46e5; transition: all 0.2s; }
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 5px; }
     </style>
 </head>
 <body class="p-6">
-    <div class="max-w-6xl mx-auto">
-        <header class="flex justify-between items-center mb-8 p-4 card rounded-xl shadow-sm">
-            <h1 class="font-bold text-xl text-slate-900">SENTINEL <span class="text-indigo-600">HIDS</span></h1>
-            <div class="flex items-center space-x-2 bg-slate-100 px-3 py-1 rounded-full border">
-                <span id="status-dot" class="w-2 h-2 rounded-full bg-red-500"></span>
-                <span id="conn-label" class="text-[10px] font-bold text-slate-500 uppercase">Disconnected</span>
+    <div class="max-w-[1500px] mx-auto">
+        <header class="flex justify-between items-center mb-8 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+            <div class="flex items-center space-x-4">
+                <div class="bg-indigo-600 p-2 rounded shadow-lg text-white font-bold text-xl">S</div>
+                <div>
+                    <h1 class="text-lg font-bold text-slate-900 leading-none">SENTINEL <span class="text-indigo-600">HIDS</span></h1>
+                    <p class="text-[10px] text-slate-500 uppercase font-bold tracking-widest mt-1">Management Console v2.1</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2 bg-slate-50 px-3 py-1 rounded-full border border-slate-200">
+                <span id="status-dot" class="w-2 h-2 rounded-full bg-slate-300"></span>
+                <span id="conn-label" class="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Connecting...</span>
             </div>
         </header>
 
-        <section class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 text-center">
-            <div class="card p-4 rounded-xl"><p class="text-[10px] font-bold text-slate-400 uppercase">Load</p><p id="stat-system" class="text-2xl font-bold tracking-tighter">--</p></div>
-            <div class="card p-4 rounded-xl"><p class="text-[10px] font-bold text-slate-400 uppercase">Auth Fail</p><p id="stat-users" class="text-2xl font-bold tracking-tighter">0</p></div>
-            <div class="card p-4 rounded-xl"><p class="text-[10px] font-bold text-slate-400 uppercase">Network</p><p id="stat-network" class="text-2xl font-bold tracking-tighter">0</p></div>
-            <div class="card p-4 rounded-xl"><p class="text-[10px] font-bold text-slate-400 uppercase">FIM</p><p id="stat-fim" class="text-xl font-bold text-emerald-600 italic">SECURE</p></div>
+        <section class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8 text-center">
+            <div class="card p-5 rounded-xl"><p class="text-[11px] text-slate-500 font-bold uppercase mb-2">System Load</p><p id="stat-system" class="text-3xl font-bold">--</p></div>
+            <div class="card p-5 rounded-xl"><p class="text-[11px] text-slate-500 font-bold uppercase mb-2">Auth Failures</p><p id="stat-users" class="text-3xl font-bold">0</p></div>
+            <div class="card p-5 rounded-xl border-t-4 border-indigo-500"><p class="text-[11px] text-slate-500 font-bold uppercase mb-2">Network Exposure</p><div class="flex items-baseline justify-center space-x-1"><p id="stat-network" class="text-3xl font-bold">0</p><span class="text-[10px] text-slate-400 font-bold">PORTS</span></div></div>
+            <div class="card p-5 rounded-xl"><p class="text-[11px] text-slate-500 font-bold uppercase mb-2">FIM Status</p><p id="stat-fim" class="text-2xl font-bold text-emerald-600 italic uppercase">Secure</p></div>
         </section>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="md:col-span-2 card p-4 rounded-xl"><canvas id="metricsChart" height="100"></canvas></div>
-            <div class="card flex flex-col rounded-xl max-h-[500px]">
-                <div class="p-3 border-b font-bold text-xs uppercase text-slate-500">Security Events</div>
-                <div id="alerts-container" class="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50/50"></div>
+        <div class="grid grid-cols-1 xl:grid-cols-12 gap-8">
+            <div class="xl:col-span-8 space-y-8">
+                <div class="card p-6 rounded-xl">
+                    <h2 class="text-xs font-bold text-slate-400 mb-6 uppercase tracking-widest flex items-center"><span class="w-1 h-4 bg-indigo-500 mr-2 rounded"></span> Performance Telemetry</h2>
+                    <canvas id="metricsChart" height="100"></canvas>
+                </div>
+                <div class="card rounded-xl overflow-hidden">
+                    <div class="p-4 bg-slate-50 border-b border-slate-200 flex justify-between"><h2 class="text-xs font-bold uppercase text-slate-800 tracking-tight">Live Process Inspection</h2></div>
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-50/50 text-slate-500 uppercase text-[9px] font-bold border-b border-slate-100">
+                            <tr><th class="p-4">PID</th><th>User</th><th>CPU%</th><th>Executable</th><th class="text-right p-4">Status</th></tr>
+                        </thead>
+                        <tbody id="process-table" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="xl:col-span-4 card flex flex-col rounded-xl overflow-hidden max-h-[850px]">
+                <div class="p-4 border-b border-slate-100 bg-white flex justify-between items-center">
+                    <h2 class="text-xs font-bold uppercase tracking-tight text-slate-800">Security Events</h2>
+                    <button onclick="clearUI()" class="text-[10px] font-bold text-slate-400 hover:text-indigo-600">RESET</button>
+                </div>
+                <div id="alerts-container" class="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar bg-slate-50/30"></div>
+                <div class="p-4 bg-white border-t border-slate-100 grid grid-cols-3 gap-2">
+                    <button id="btn-info" onclick="toggleFilter('INFO', 'btn-info')" class="py-2 text-[10px] font-bold rounded border bg-blue-50 text-blue-600 border-blue-100">INFO</button>
+                    <button id="btn-warning" onclick="toggleFilter('WARNING', 'btn-warning')" class="py-2 text-[10px] font-bold rounded border bg-amber-50 text-amber-600 border-amber-100">WARN</button>
+                    <button id="btn-critical" onclick="toggleFilter('CRITICAL', 'btn-critical')" class="py-2 text-[10px] font-bold rounded border bg-rose-50 text-rose-600 border-rose-100">CRIT</button>
+                </div>
             </div>
         </div>
     </div>
@@ -42,13 +74,27 @@
     <script>
         let ws;
         let alertHistory = [];
+        let activeFilters = {'INFO': true, 'WARNING': true, 'CRITICAL': true};
 
         const ctx = document.getElementById('metricsChart').getContext('2d');
         const metricsChart = new Chart(ctx, {
             type: 'line',
-            data: { labels: [], datasets: [{ label: 'Load', data: [], borderColor: '#4f46e5', tension: 0.3, fill: true, backgroundColor: 'rgba(79, 70, 229, 0.05)' }]},
-            options: { responsive: true, scales: { y: { beginAtZero: true }, x: { display: false } } }
+            data: { labels: [], datasets: [{ label: 'CPU Load', data: [], borderColor: '#4f46e5', backgroundColor: 'rgba(79, 70, 229, 0.05)', fill: true, tension: 0.3, pointRadius: 0 }] },
+            options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true }, x: { display: false } } }
         });
+
+        function clearUI() {
+            alertHistory = [];
+            document.getElementById('alerts-container').innerHTML = '';
+            document.getElementById('stat-users').innerText = "0";
+            document.getElementById('stat-network').innerText = "0";
+            document.getElementById('stat-fim').innerText = "SECURE";
+            document.getElementById('stat-fim').className = "text-2xl font-bold text-emerald-600 italic uppercase";
+            document.getElementById('process-table').innerHTML = '';
+            metricsChart.data.labels = [];
+            metricsChart.data.datasets[0].data = [];
+            metricsChart.update();
+        }
 
         function connect() {
             const serverIP = window.location.hostname;
@@ -57,25 +103,17 @@
 
             ws.onopen = () => {
                 document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-emerald-500";
-                document.getElementById('conn-label').innerText = "Live Connection";
-                console.log("Connected to Sentinel Backend");
+                document.getElementById('conn-label').innerText = "Live connection";
+                document.getElementById('conn-label').className = "text-[10px] font-bold text-emerald-600 uppercase";
             };
 
             ws.onmessage = (event) => {
                 const data = JSON.parse(event.data);
                 
-                // COMMANDES FORCEES
                 if (data.command === "reload") { location.reload(); return; }
-                if (data.command === "clear") { 
-                    alertHistory = []; 
-                    document.getElementById('alerts-container').innerHTML = '';
-                    document.getElementById('stat-users').innerText = "0";
-                    document.getElementById('stat-fim').innerText = "SECURE";
-                    document.getElementById('stat-fim').className = "text-xl font-bold text-emerald-600 italic";
-                    return; 
-                }
+                if (data.command === "clear") { clearUI(); return; }
 
-                // MISE À JOUR UI
+                // KPI Updates
                 if (data.module === "system_health") {
                     document.getElementById('stat-system').innerText = data.load;
                     metricsChart.data.labels.push("");
@@ -83,31 +121,55 @@
                     if (metricsChart.data.labels.length > 20) { metricsChart.data.labels.shift(); metricsChart.data.datasets[0].data.shift(); }
                     metricsChart.update('none');
                 }
-                if (data.module === "user_activity") document.getElementById('stat-users').innerText = data.failed_attempts;
+                if (data.module === "user_activity" && data.failed_attempts !== undefined) {
+                    document.getElementById('stat-users').innerText = data.failed_attempts;
+                }
                 if (data.module === "network_audit") document.getElementById('stat-network').innerText = data.open_ports;
                 if (data.module === "file_integrity") {
                     const isMod = data.status === "MODIFIED";
-                    document.getElementById('stat-fim').innerText = isMod ? "ALERT" : "SECURE";
-                    document.getElementById('stat-fim').className = `text-xl font-bold italic ${isMod ? 'text-rose-600' : 'text-emerald-600'}`;
+                    document.getElementById('stat-fim').innerText = isMod ? "Alert" : "Secure";
+                    document.getElementById('stat-fim').className = `text-2xl font-bold italic uppercase ${isMod ? 'text-rose-600' : 'text-emerald-600'}`;
                 }
 
-                // AJOUT ALERTE
+                // Process Table
+                if (data.module === "process_audit" && data.top_processes) {
+                    const body = document.getElementById('process-table');
+                    body.innerHTML = '';
+                    data.top_processes.forEach(p => {
+                        const isHigh = p.cpu > 70;
+                        body.innerHTML += `<tr class="hover:bg-slate-50 transition-colors"><td class="p-4 text-slate-400 mono font-medium">${p.pid}</td><td class="font-semibold text-slate-700">${p.user}</td><td class="${isHigh ? 'text-rose-600 font-bold' : 'text-slate-600'}">${p.cpu}%</td><td class="mono text-[11px] text-slate-500">${p.cmd}</td><td class="text-right p-4"><span class="px-2.5 py-1 rounded-full text-[9px] font-bold ${isHigh ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'}">${isHigh ? 'Anomaly' : 'Trusted'}</span></td></tr>`;
+                    });
+                }
+
+                // Incident Card
                 alertHistory.unshift(data);
-                const container = document.getElementById('alerts-container');
-                container.innerHTML = `<div class="p-3 card rounded-lg incident-card text-xs mb-2">
-                    <div class="flex justify-between font-bold text-[9px] uppercase text-slate-400 mb-1">
-                        <span>${data.module}</span><span>${data.timestamp ? data.timestamp.split(' ')[1] : ''}</span>
-                    </div>
-                    <p class="font-bold text-slate-800">${data.message}</p>
-                </div>` + container.innerHTML;
+                if (alertHistory.length > 50) alertHistory.pop();
+                renderAlerts();
             };
 
             ws.onclose = () => {
                 document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-red-500";
-                document.getElementById('conn-label').innerText = "Offline - Retrying...";
-                setTimeout(connect, 1000); // Reconnexion super rapide
+                document.getElementById('conn-label').innerText = "Offline - Reconnecting...";
+                setTimeout(connect, 1000);
             };
         }
+
+        function renderAlerts() {
+            const container = document.getElementById('alerts-container');
+            container.innerHTML = '';
+            alertHistory.forEach(data => {
+                if (activeFilters[data.severity || 'INFO']) {
+                    const border = data.severity === 'CRITICAL' ? 'border-l-rose-500' : data.severity === 'WARNING' ? 'border-l-amber-500' : 'border-l-indigo-500';
+                    const badge = data.severity === 'CRITICAL' ? 'bg-rose-50 text-rose-700' : data.severity === 'WARNING' ? 'bg-amber-50 text-amber-700' : 'bg-indigo-50 text-indigo-700';
+                    container.innerHTML += `<div class="p-4 rounded-lg bg-white border border-slate-200 shadow-sm incident-card ${border}">
+                        <div class="flex justify-between mb-2"><span class="text-[9px] font-black uppercase px-2 py-0.5 rounded ${badge}">${data.module || 'SYS'}</span><span class="text-[10px] font-mono text-slate-400">${data.timestamp ? data.timestamp.split(' ')[1] : ''}</span></div>
+                        <p class="text-xs font-bold text-slate-800 leading-tight">${data.message}</p>
+                    </div>`;
+                }
+            });
+        }
+
+        function toggleFilter(sev, id) { activeFilters[sev] = !activeFilters[sev]; document.getElementById(id).style.opacity = activeFilters[sev] ? "1" : "0.3"; renderAlerts(); }
 
         connect();
     </script>
