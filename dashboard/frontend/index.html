@@ -3,91 +3,115 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HIDS - Cyber Dashboard Pro</title>
+    <title>Sentinel HIDS | Control Plane</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
-        body { scrollbar-width: thin; scrollbar-color: #1f2937 #111827; background-color: #0a0f16; }
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #111827; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 10px; }
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #f1f5f9; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #1e293b; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; border-radius: 2px; }
+        .card { background-color: #1e293b; border: 1px solid #334155; }
+        .incident-card { transition: all 0.2s ease; border-left: 3px solid transparent; }
+        .incident-card:hover { background-color: #334155; }
     </style>
 </head>
-<body class="text-green-400 font-mono p-4 md:p-8 min-h-screen">
+<body class="p-6">
 
-    <div class="max-w-6xl mx-auto">
-        <header class="mb-8 border-b border-green-900/50 pb-4 flex justify-between items-center">
-            <h1 class="text-2xl md:text-3xl font-bold uppercase tracking-tighter text-green-500">[>] HIDS_SEC_MONITOR_ <span class="text-[10px] font-normal lowercase text-gray-500">v2.0-pro</span></h1>
-            <div class="flex items-center space-x-3 bg-black/40 p-2 rounded border border-gray-800">
-                <span id="status-dot" class="w-3 h-3 rounded-full bg-red-500 shadow-[0_0_10px_#ef4444]"></span>
-                <span id="status-text" class="text-xs uppercase tracking-widest text-gray-400">Offline</span>
+    <div class="max-w-[1600px] mx-auto">
+        <header class="flex justify-between items-center mb-6 border-b border-slate-700 pb-4">
+            <div class="flex items-center space-x-4">
+                <div class="bg-blue-600 p-1.5 rounded text-white font-bold text-xl">S</div>
+                <div>
+                    <h1 class="text-lg font-bold tracking-tight">SENTINEL <span class="text-slate-400 font-medium">HIDS</span></h1>
+                    <p class="text-[10px] text-slate-500 uppercase tracking-widest font-semibold">Node: hids-server-01</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-6">
+                <div class="text-right">
+                    <p id="status-text" class="text-[10px] uppercase font-bold text-slate-400">Connection Status</p>
+                    <div class="flex items-center justify-end space-x-2">
+                        <span id="status-dot" class="w-2 h-2 rounded-full bg-slate-500"></span>
+                        <span id="conn-label" class="text-xs font-semibold text-slate-300">DISCONNECTED</span>
+                    </div>
+                </div>
             </div>
         </header>
 
-        <section class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <div class="p-3 border border-gray-800 bg-gray-900/50 rounded shadow-inner text-center">
-                <p class="text-[10px] text-gray-500 uppercase font-bold">System Health</p>
-                <p id="stat-system" class="text-lg font-bold text-green-500">STABLE</p>
+        <section class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div class="card p-4 rounded-lg">
+                <p class="text-[11px] text-slate-400 uppercase font-bold mb-1">System Load</p>
+                <p id="stat-system" class="text-2xl font-bold">--</p>
             </div>
-            <div class="p-3 border border-gray-800 bg-gray-900/50 rounded shadow-inner text-center">
-                <p class="text-[10px] text-gray-500 uppercase font-bold">Failed Logins</p>
-                <p id="stat-users" class="text-lg font-bold text-white">0</p>
+            <div class="card p-4 rounded-lg">
+                <p class="text-[11px] text-slate-400 uppercase font-bold mb-1">Auth Failures (24h)</p>
+                <p id="stat-users" class="text-2xl font-bold">0</p>
             </div>
-            <div class="p-3 border border-gray-800 bg-gray-900/50 rounded shadow-inner text-center">
-                <p class="text-[10px] text-gray-500 uppercase font-bold">Open Ports</p>
-                <p id="stat-network" class="text-lg font-bold text-white">--</p>
-            </div>
-            <div class="p-3 border border-gray-800 bg-gray-900/50 rounded shadow-inner text-center">
-                <p class="text-[10px] text-gray-500 uppercase font-bold">FIM Status</p>
-                <p id="stat-fim" class="text-lg font-bold text-green-500">SECURE</p>
-            </div>
-        </section>
-
-        <section class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-            <div class="lg:col-span-2 p-4 border border-gray-800 bg-gray-900/50 rounded shadow-lg">
-                <h2 class="text-xs text-gray-500 mb-4 uppercase font-bold">/ Performance Telemetry</h2>
-                <canvas id="metricsChart" height="120"></canvas>
-            </div>
-            <div class="p-4 border border-gray-800 bg-gray-900/50 rounded shadow-lg flex flex-col items-center">
-                <h2 class="text-xs text-gray-500 mb-4 self-start uppercase font-bold">/ Disk Allocation</h2>
-                <div class="relative w-full aspect-square flex items-center justify-center max-w-[200px]">
-                    <canvas id="diskChart"></canvas>
-                    <div id="disk-label" class="absolute text-2xl font-bold text-white">0%</div>
+            <div class="card p-4 rounded-lg border-b-2 border-b-blue-500">
+                <p class="text-[11px] text-slate-400 uppercase font-bold mb-1">Network Surface</p>
+                <div class="flex items-baseline space-x-2">
+                    <p id="stat-network" class="text-2xl font-bold">0</p>
+                    <span class="text-xs text-slate-500 italic">ports active</span>
                 </div>
             </div>
-        </section>
-
-        <section class="mb-8 p-4 border border-gray-800 bg-gray-900/50 rounded shadow-lg">
-            <h2 class="text-xs text-gray-500 mb-4 uppercase font-bold">/ Active Process Audit</h2>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-[11px]">
-                    <thead>
-                        <tr class="border-b border-gray-800 text-gray-500 uppercase">
-                            <th class="pb-2">PID</th><th class="pb-2">User</th><th class="pb-2">CPU%</th><th class="pb-2">Command</th><th class="pb-2 text-right">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody id="process-table">
-                        <tr><td colspan="5" class="py-4 text-center text-gray-600 italic">Waiting for telemetry...</td></tr>
-                    </tbody>
-                </table>
+            <div class="card p-4 rounded-lg">
+                <p class="text-[11px] text-slate-400 uppercase font-bold mb-1">Integrity (FIM)</p>
+                <p id="stat-fim" class="text-2xl font-bold text-blue-400">VERIFIED</p>
             </div>
         </section>
 
-        <main>
-            <div class="flex justify-between items-end mb-4 border-b border-gray-800 pb-2">
-                <h2 class="text-xs text-gray-500 uppercase font-bold">/ Incident Stream</h2>
-                <div class="flex space-x-2">
-                    <button id="btn-info" onclick="toggleFilter('INFO', 'btn-info')" class="px-2 py-1 text-[10px] border border-blue-600 bg-blue-900/20 text-blue-400 rounded">INFO</button>
-                    <button id="btn-warning" onclick="toggleFilter('WARNING', 'btn-warning')" class="px-2 py-1 text-[10px] border border-yellow-600 bg-yellow-900/20 text-yellow-400 rounded">WARN</button>
-                    <button id="btn-critical" onclick="toggleFilter('CRITICAL', 'btn-critical')" class="px-2 py-1 text-[10px] border border-red-600 bg-red-900/20 text-red-400 rounded shadow-[0_0_5px_rgba(239,68,68,0.3)]">CRIT</button>
-                    <div class="w-px bg-gray-800 mx-1"></div>
-                    <button onclick="clearAlerts()" class="px-2 py-1 text-[10px] border border-gray-700 bg-gray-800 text-gray-500 hover:text-white transition-colors rounded">CLEAR</button>
+        <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+            
+            <div class="xl:col-span-8 space-y-6">
+                
+                <div class="card p-5 rounded-lg">
+                    <h2 class="text-sm font-bold mb-4 text-slate-300 flex items-center">
+                        <span class="w-1.5 h-4 bg-blue-500 mr-2 rounded-full"></span> Resource Monitoring
+                    </h2>
+                    <canvas id="metricsChart" height="80"></canvas>
+                </div>
+
+                <div class="card rounded-lg overflow-hidden">
+                    <div class="p-4 border-b border-slate-700 bg-slate-800/30 flex justify-between items-center">
+                        <h2 class="text-sm font-bold text-slate-300 italic">Process Inspection Tree</h2>
+                        <span class="text-[10px] bg-slate-700 px-2 py-1 rounded text-slate-400 uppercase">Real-time</span>
+                    </div>
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-800/50 text-slate-400 uppercase text-[10px] font-bold">
+                            <tr>
+                                <th class="p-3">PID</th><th>User</th><th>CPU%</th><th>Executable Path</th><th class="text-right p-3">Integrity</th>
+                            </tr>
+                        </thead>
+                        <tbody id="process-table" class="divide-y divide-slate-700">
+                            <tr><td colspan="5" class="p-8 text-center text-slate-500 italic">No telemetry data received...</td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
-            <div id="alerts-container" class="space-y-3 max-h-[450px] overflow-y-auto pr-2 custom-scrollbar"></div>
-        </main>
+
+            <div class="xl:col-span-4 flex flex-col h-full">
+                <div class="card flex-1 rounded-lg flex flex-col max-h-[850px]">
+                    <div class="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-800/20">
+                        <h2 class="text-sm font-bold uppercase tracking-tight text-slate-300">Security Events</h2>
+                        <div class="flex space-x-1">
+                            <button onclick="clearAlerts()" class="text-[10px] px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded font-bold transition">CLEAR</button>
+                        </div>
+                    </div>
+
+                    <div id="alerts-container" class="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+                        </div>
+
+                    <div class="p-3 border-t border-slate-700 bg-slate-900/50 flex space-x-2">
+                        <button id="btn-info" onclick="toggleFilter('INFO', 'btn-info')" class="flex-1 py-1.5 text-[10px] font-bold rounded border border-blue-500/30 text-blue-400">INFO</button>
+                        <button id="btn-warning" onclick="toggleFilter('WARNING', 'btn-warning')" class="flex-1 py-1.5 text-[10px] font-bold rounded border border-yellow-500/30 text-yellow-400">WARN</button>
+                        <button id="btn-critical" onclick="toggleFilter('CRITICAL', 'btn-critical')" class="flex-1 py-1.5 text-[10px] font-bold rounded border border-red-500/30 text-red-400">CRIT</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -96,141 +120,133 @@
         const ws = new WebSocket(`ws://${serverIP}:${serverPort}/ws/alerts`);
 
         let alertHistory = [];
-        const MAX_ALERTS = 50;
+        const MAX_ALERTS = 100;
         let activeFilters = { 'INFO': true, 'WARNING': true, 'CRITICAL': true };
 
-        // --- AUDIO ALERT ---
-        function playAlert() {
-            try {
-                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                if (audioCtx.state === 'suspended') return;
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.connect(gain); gain.connect(audioCtx.destination);
-                osc.type = 'square';
-                osc.frequency.setValueAtTime(880, audioCtx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.2);
-                gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
-                osc.start(); osc.stop(audioCtx.currentTime + 0.5);
-            } catch (e) {}
-        }
-
-        // --- CHARTS CONFIG ---
-        Chart.defaults.color = '#6b7280';
-        Chart.defaults.font.family = 'monospace';
+        // --- CHARTS CONFIG (Sober Colors) ---
+        Chart.defaults.color = '#64748b';
+        Chart.defaults.font.family = 'Inter';
         const metricsChart = new Chart(document.getElementById('metricsChart'), {
             type: 'line',
             data: { labels: [], datasets: [
-                { label: 'CPU', data: [], borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.05)', fill: true, tension: 0.4, borderWidth: 2, pointRadius: 0 },
-                { label: 'RAM', data: [], borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.05)', fill: true, tension: 0.4, borderWidth: 2, pointRadius: 0 }
+                { label: 'CPU Usage', data: [], borderColor: '#3b82f6', backgroundColor: 'transparent', borderWidth: 2, pointRadius: 0, tension: 0.3 },
+                { label: 'RAM Usage', data: [], borderColor: '#8b5cf6', backgroundColor: 'transparent', borderWidth: 2, pointRadius: 0, tension: 0.3 }
             ]},
-            options: { responsive: true, scales: { y: { beginAtZero: true, grid: { color: '#1f2937' } }, x: { grid: { display: false } } }, plugins: { legend: { labels: { boxWidth: 12, font: { size: 10 } } } } }
+            options: { responsive: true, plugins: { legend: { display: true, position: 'top', align: 'end', labels: { boxWidth: 8, usePointStyle: true } } }, scales: { y: { grid: { color: '#1e293b' } }, x: { display: false } } }
         });
 
-        const diskChart = new Chart(document.getElementById('diskChart'), {
-            type: 'doughnut',
-            data: { labels: ['Used', 'Free'], datasets: [{ data: [0, 100], backgroundColor: ['#10b981', '#111827'], borderWidth: 0, cutout: '82%' }] },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
-        });
-
-        // --- RENDER LOGIC ---
+        // --- CORE UI LOGIC ---
         function renderAlerts() {
             const container = document.getElementById('alerts-container');
             container.innerHTML = '';
             
-            alertHistory.forEach(data => {
+            alertHistory.forEach((data, index) => {
                 if (activeFilters[data.severity || 'INFO']) {
-                    const sevStyle = data.severity === 'CRITICAL' ? 'border-l-4 border-red-600 bg-red-950/20 text-red-200' : 
-                                   data.severity === 'WARNING' ? 'border-l-4 border-yellow-600 bg-yellow-950/20 text-yellow-200' : 
-                                   'border-l-4 border-blue-600 bg-blue-950/10 text-blue-300';
+                    const borderCol = data.severity === 'CRITICAL' ? 'border-l-red-500' : data.severity === 'WARNING' ? 'border-l-yellow-500' : 'border-l-blue-500';
+                    const textCol = data.severity === 'CRITICAL' ? 'text-red-400' : data.severity === 'WARNING' ? 'text-yellow-400' : 'text-blue-400';
 
-                    let context = "";
-                    if (data.module === "user_activity" && data.failed_attempts) context = `👤 Auth Logs: <span class="text-white font-bold">${data.failed_attempts} failed attempts</span> detected`;
-                    else if (data.module === "process_audit" && data.top_processes) context = `⚙️ Critical Proc: <span class="text-white font-bold">${data.top_processes[0].cmd}</span> (CPU: ${data.top_processes[0].cpu}%)`;
-                    else if (data.module === "network_audit") context = `🌐 Active network ports: <span class="text-white font-bold">${data.open_ports}</span>`;
-                    else if (data.module === "file_integrity") context = `📁 Target: <span class="text-white font-bold">${data.message.includes('sudoers') ? '/etc/sudoers' : 'System Config'}</span>`;
+                    // Extended details logic
+                    let detailsHtml = "";
+                    if (data.module === "process_audit" && data.top_processes) {
+                        detailsHtml = `<div class="mt-2 grid grid-cols-2 gap-2 text-[10px] bg-slate-900/50 p-2 rounded border border-slate-700 font-mono">
+                            <span class="text-slate-500 uppercase">Primary Offender:</span><span class="text-slate-300">${data.top_processes[0].cmd}</span>
+                            <span class="text-slate-500 uppercase">Resource Load:</span><span class="${textCol}">${data.top_processes[0].cpu}% CPU</span>
+                        </div>`;
+                    } else if (data.module === "user_activity") {
+                        detailsHtml = `<div class="mt-2 text-[10px] bg-slate-900/50 p-2 rounded border border-slate-700 font-mono">
+                            <span class="text-slate-500 uppercase">Trigger Source:</span> <span class="text-slate-300">/var/log/auth.log</span><br/>
+                            <span class="text-slate-500 uppercase">Telemetry:</span> <span class="text-white font-bold">${data.failed_attempts || 0} failed login attempts in buffer</span>
+                        </div>`;
+                    } else if (data.module === "file_integrity") {
+                        detailsHtml = `<div class="mt-2 text-[10px] bg-slate-900/50 p-2 rounded border border-slate-700 font-mono">
+                            <span class="text-slate-500 uppercase">Policy:</span> <span class="text-slate-300">File Integrity Baseline Mismatch</span><br/>
+                            <span class="text-slate-500 uppercase">Risk:</span> <span class="text-red-400 italic">Unauthorized configuration change detected.</span>
+                        </div>`;
+                    }
 
                     container.innerHTML += `
-                        <div class="p-3 rounded border border-white/5 shadow-lg ${sevStyle} animate-fade-in text-[13px]">
-                            <div class="flex justify-between items-center mb-1">
-                                <span class="font-bold tracking-widest text-[9px] bg-black/40 px-2 py-0.5 rounded border border-white/10 uppercase">${data.module || 'SYS'}</span>
-                                <span class="opacity-40 text-[10px]">${data.timestamp ? data.timestamp.split(' ')[1] : ''}</span>
+                        <div class="incident-card p-3 rounded bg-slate-800/40 border border-slate-700 ${borderCol} shadow-sm">
+                            <div class="flex justify-between items-start mb-1">
+                                <span class="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-slate-700 text-slate-300 tracking-wider">${data.module || 'SYSTEM'}</span>
+                                <span class="text-[10px] font-mono text-slate-500">${data.timestamp ? data.timestamp.split(' ')[1] : ''}</span>
                             </div>
-                            <p class="font-medium text-gray-100">${data.message || 'Check complete'}</p>
-                            ${context ? `<p class="text-[11px] opacity-70 mt-2 font-mono bg-black/30 p-1.5 rounded-sm border-l border-white/10">${context}</p>` : ''}
+                            <p class="text-xs font-semibold text-slate-200 leading-snug">${data.message}</p>
+                            ${detailsHtml}
                         </div>`;
                 }
             });
         }
 
-        function toggleFilter(sev, id) { activeFilters[sev] = !activeFilters[sev]; document.getElementById(id).classList.toggle('opacity-30'); renderAlerts(); }
+        function toggleFilter(sev, id) { 
+            activeFilters[sev] = !activeFilters[sev]; 
+            document.getElementById(id).style.opacity = activeFilters[sev] ? "1" : "0.3"; 
+            renderAlerts(); 
+        }
+
         function clearAlerts() { alertHistory = []; renderAlerts(); }
 
         // --- WS HANDLER ---
         ws.onopen = () => {
-            document.getElementById('status-dot').className = "w-3 h-3 rounded-full bg-green-500 shadow-[0_0_10px_#10b981]";
-            document.getElementById('status-text').innerText = "Connected (Live)";
-            document.getElementById('status-text').className = "text-xs uppercase tracking-widest text-green-500";
+            document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-emerald-500";
+            document.getElementById('conn-label').innerText = "LIVE CONNECTION";
+            document.getElementById('conn-label').className = "text-xs font-bold text-emerald-400";
         };
 
         ws.onmessage = (event) => {
             const data = JSON.parse(event.data);
-
-            if (data.command === "clear") {
-                clearAlerts();
-                return;
-            }
+            if (data.command === "clear") { clearAlerts(); return; }
 
             alertHistory.unshift(data);
             if (alertHistory.length > MAX_ALERTS) alertHistory.pop();
-            if (data.severity === 'CRITICAL') playAlert();
 
-            // Update Stats & Charts
+            // Stats Update
             if (data.module === "system_health") {
-                const el = document.getElementById('stat-system');
-                el.innerText = data.severity === "CRITICAL" ? "CRITICAL" : data.severity === "WARNING" ? "STRESSED" : "STABLE";
-                el.className = `text-lg font-bold ${data.severity === "CRITICAL" ? "text-red-500" : data.severity === "WARNING" ? "text-yellow-500" : "text-green-500"}`;
-                if (data.load !== undefined) {
-                    if (metricsChart.data.labels.length >= 15) { metricsChart.data.labels.shift(); metricsChart.data.datasets[0].data.shift(); metricsChart.data.datasets[1].data.shift(); }
-                    metricsChart.data.labels.push(data.timestamp ? data.timestamp.split(' ')[1] : '');
-                    metricsChart.data.datasets[0].data.push(data.load);
-                    metricsChart.data.datasets[1].data.push(data.memory);
-                    metricsChart.update();
-                }
-                if (data.disk !== undefined) {
-                    const used = parseInt(data.disk);
-                    diskChart.data.datasets[0].data = [used, 100 - used];
-                    diskChart.data.datasets[0].backgroundColor[0] = used > 90 ? '#ef4444' : used > 70 ? '#f59e0b' : '#10b981';
-                    diskChart.update();
-                    document.getElementById('disk-label').innerText = used + '%';
-                }
+                document.getElementById('stat-system').innerText = data.load + " Load";
+                document.getElementById('stat-system').className = `text-2xl font-bold ${data.severity === 'CRITICAL' ? 'text-red-400' : 'text-slate-100'}`;
+                
+                metricsChart.data.labels.push("");
+                metricsChart.data.datasets[0].data.push(data.load);
+                metricsChart.data.datasets[1].data.push(data.memory / 10); // scale for chart
+                if (metricsChart.data.labels.length > 20) { metricsChart.data.labels.shift(); metricsChart.data.datasets.forEach(d => d.data.shift()); }
+                metricsChart.update('none');
             }
             if (data.module === "user_activity" && data.failed_attempts !== undefined) {
                 document.getElementById('stat-users').innerText = data.failed_attempts;
-                document.getElementById('stat-users').className = `text-lg font-bold ${parseInt(data.failed_attempts) > 5 ? 'text-red-500' : 'text-white'}`;
+                document.getElementById('stat-users').className = `text-2xl font-bold ${data.failed_attempts > 5 ? 'text-red-400' : 'text-slate-100'}`;
             }
-            if (data.module === "network_audit") document.getElementById('stat-network').innerText = data.open_ports || '--';
+            if (data.module === "network_audit") document.getElementById('stat-network').innerText = data.open_ports;
             if (data.module === "file_integrity") {
-                const el = document.getElementById('stat-fim');
-                el.innerText = data.status === "MODIFIED" ? "CHANGED" : "SECURE";
-                el.className = `text-lg font-bold ${data.status === "MODIFIED" ? "text-red-500" : "text-green-500"}`;
+                document.getElementById('stat-fim').innerText = data.status === "MODIFIED" ? "COMPROMISED" : "VERIFIED";
+                document.getElementById('stat-fim').className = `text-2xl font-bold ${data.status === "MODIFIED" ? 'text-red-400' : 'text-blue-400'}`;
             }
+
+            // Process Table
             if (data.module === "process_audit" && data.top_processes) {
                 const tableBody = document.getElementById('process-table');
                 tableBody.innerHTML = '';
                 data.top_processes.forEach(proc => {
-                    const isSuspicious = proc.cpu > 80 || (proc.user === 'root' && proc.cmd.includes('./'));
-                    tableBody.innerHTML += `<tr class="border-b border-gray-800/50 hover:bg-gray-700/20 transition-colors"><td class="py-2 text-gray-500">${proc.pid}</td><td class="py-2 text-gray-300">${proc.user}</td><td class="py-2 ${proc.cpu > 50 ? 'text-yellow-500 font-bold' : ''}">${proc.cpu}%</td><td class="py-2 text-white truncate max-w-[180px]">${proc.cmd}</td><td class="py-2 text-right"><span class="px-2 py-0.5 rounded-sm text-[8px] font-bold ${isSuspicious ? 'bg-red-900/40 text-red-400 border border-red-500/50 animate-pulse' : 'bg-green-900/30 text-green-400 border border-green-500/30'}">${isSuspicious ? 'SUSPICIOUS' : 'TRUSTED'}</span></td></tr>`;
+                    const isCrit = proc.cpu > 70;
+                    tableBody.innerHTML += `
+                        <tr class="hover:bg-slate-700/20">
+                            <td class="p-3 text-slate-500 mono">${proc.pid}</td>
+                            <td class="font-medium">${proc.user}</td>
+                            <td class="${isCrit ? 'text-red-400 font-bold' : 'text-slate-300'}">${proc.cpu}%</td>
+                            <td class="mono text-[10px] text-slate-400 truncate max-w-[200px]">${proc.cmd}</td>
+                            <td class="text-right p-3">
+                                <span class="px-2 py-0.5 rounded text-[9px] font-bold ${isCrit ? 'bg-red-500/10 text-red-400' : 'bg-emerald-500/10 text-emerald-400'}">
+                                    ${isCrit ? 'ANOMALY' : 'NORMAL'}
+                                </span>
+                            </td>
+                        </tr>`;
                 });
             }
             renderAlerts();
         };
 
         ws.onclose = () => {
-            document.getElementById('status-dot').className = "w-3 h-3 rounded-full bg-red-500 shadow-[0_0_10px_#ef4444]";
-            document.getElementById('status-text').innerText = "Offline";
-            document.getElementById('status-text').className = "text-xs uppercase tracking-widest text-red-500";
+            document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-red-500";
+            document.getElementById('conn-label').innerText = "CONNECTION LOST";
+            document.getElementById('conn-label').className = "text-xs font-bold text-red-500";
         };
     </script>
 </body>
