@@ -1,72 +1,106 @@
 #!/bin/bash
 # =========================================================
-# HIDS - Live Demo Attack Simulator (Cinematic Mode)
+# SENTINEL HIDS - Professional Attack Simulation Script
 # =========================================================
 
+# --- CONFIGURATION ---
 LOG_FILE="/opt/hids-project/hids_project/dashboard/test_logs/hids_system.log"
+HOST=$(hostname)
 
-echo "================================================="
-echo "💀 HIDS Live Demo Simulator - CINEMATIC MODE 💀"
-echo "================================================="
-echo "Nettoyage du Dashboard en cours..."
-echo '{"command":"clear"}' >> "$LOG_FILE"
-echo "-> Magie ! Le Dashboard s'est vidé tout seul en direct."
-echo "La présentation commence dans 5 secondes..."
-sleep 5
+# Terminal Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+# Helper: Dynamic Timestamp
+get_ts() { date +"%Y-%m-%d %H:%M:%S"; }
+
+# Helper: Typewriter Effect
+type_text() {
+    local text="$1"
+    for (( i=0; i<${#text}; i++ )); do
+        echo -ne "${text:$i:1}"
+        sleep 0.03
+    done
+    echo ""
+}
+
+clear
+echo -e "${BLUE}=====================================================${NC}"
+echo -e "${BLUE}   SENTINEL HIDS - ENTERPRISE THREAT SIMULATOR       ${NC}"
+echo -e "${BLUE}=====================================================${NC}"
+echo -e "${YELLOW}[SYSTEM] Target Host: $HOST${NC}"
+echo -e "${YELLOW}[SYSTEM] Log Pipeline: $LOG_FILE${NC}"
 echo ""
 
-# === 1. SYSTEM HEALTH & DISK (Fake Payload Injection) ===
-echo "🔥 [1/5] SIMULATION : Fuite de mémoire et saturation Disque (Logic Bomb)..."
-timestamp=$(date +"%Y-%m-%d %H:%M:%S")
-host=$(hostname)
-echo "{\"timestamp\":\"$timestamp\",\"host\":\"$host\",\"module\":\"system_health\",\"status\":\"CRITICAL\",\"severity\":\"CRITICAL\",\"load\":\"94\",\"memory\":\"99\",\"disk\":\"98\",\"message\":\"Critical resource exhaustion detected!\"}" >> "$LOG_FILE"
-sleep 8
-echo "   -> Regardez le graphique et l'allocation disque à 98% !"
-echo ""
+# --- STEP 0: INITIALIZATION ---
+echo -e "${YELLOW}[*] Initializing Demo Environment...${NC}"
+# Send clear command to flush the frontend
+echo "{\"command\":\"clear\"}" >> "$LOG_FILE"
+type_text "[-] Flushing remote dashboard memory... SUCCESS"
+type_text "[-] Synchronizing telemetry clocks... SUCCESS"
+echo -e "${GREEN}[+] Ready for live demonstration.${NC}"
+sleep 3
 
-# === 2. NETWORK AUDIT (Port 6666) ===
-echo "🔥 [2/5] SIMULATION : Ouverture d'un port caché (Reverse Shell)..."
-# Injection visuelle pour peupler instantanément le Widget
-echo "{\"timestamp\":\"$timestamp\",\"host\":\"$host\",\"module\":\"network_audit\",\"severity\":\"INFO\",\"message\":\"Network audit check complete\",\"open_ports\":\"32\"}" >> "$LOG_FILE"
+# --- STEP 1: RESOURCE EXHAUSTION (System Health) ---
+echo -e "\n${RED}[!] STAGE 1: Resource Exhaustion (DoS Attack)${NC}"
+type_text "> Executing memory leak payload and fork bomb simulation..."
+echo "{\"timestamp\":\"$(get_ts)\",\"host\":\"$HOST\",\"module\":\"system_health\",\"status\":\"CRITICAL\",\"severity\":\"CRITICAL\",\"load\":12.45,\"memory\":98,\"disk\":96,\"message\":\"Critical resource exhaustion: CPU Load Average exceeded threshold (12.45)\"}" >> "$LOG_FILE"
+echo -e "${BLUE}   [Action] Observe the 'System Load' KPI and the Telemetry Graph spikes.${NC}"
+sleep 6
+
+# --- STEP 2: NETWORK PERSISTENCE (Network Audit) ---
+echo -e "\n${RED}[!] STAGE 2: Establishing Network Persistence${NC}"
+type_text "> Opening covert listener (Reverse Shell) on port 6666..."
+# Actually open the port for a few seconds
 timeout 10 nc -l -p 6666 &
-sleep 8
-echo "   -> Regardez le widget 'Open Ports' afficher 32, et le flux d'incidents !"
-echo ""
+# Inject the detection log
+echo "{\"timestamp\":\"$(get_ts)\",\"host\":\"$HOST\",\"module\":\"network_audit\",\"severity\":\"CRITICAL\",\"message\":\"Unauthorized network listener detected on port 6666\",\"open_ports\":32}" >> "$LOG_FILE"
+echo -e "${BLUE}   [Action] Watch the 'Network Exposure' widget update to 32 active ports.${NC}"
+sleep 6
 
-# === 3. PROCESS AUDIT (High CPU) ===
-echo "🔥 [3/5] SIMULATION : Lancement d'un Malware cryptomineur..."
-# Injection visuelle d'un processus critique pour peupler le tableau instantanément
-fake_procs="[{\"pid\":\"666\", \"user\":\"root\", \"cpu\":\"99.9\", \"cmd\":\"/tmp/xmrig-miner\"}, {\"pid\":\"1\", \"user\":\"root\", \"cpu\":\"0.1\", \"cmd\":\"systemd\"}, {\"pid\":\"123\", \"user\":\"www-data\", \"cpu\":\"0.0\", \"cmd\":\"nginx\"}]"
-echo "{\"timestamp\":\"$timestamp\",\"host\":\"$host\",\"module\":\"process_audit\",\"severity\":\"INFO\",\"message\":\"Process audit check complete\",\"top_processes\":$fake_procs}" >> "$LOG_FILE"
-timeout 10 bash -c 'while true; do :; done' &
-sleep 8
-echo "   -> Regardez le tableau 'Active Process' (la ligne rouge SUSPICIOUS) !"
-echo ""
+# --- STEP 3: MALWARE EXECUTION (Process Audit) ---
+echo -e "\n${RED}[!] STAGE 3: Malicious Process Deployment${NC}"
+type_text "> Launching cryptojacker binary: /tmp/.hidden/xmrig..."
+fake_procs="[{\"pid\":\"666\", \"user\":\"root\", \"cpu\":99.9, \"cmd\":\"/tmp/.hidden/xmrig -o pool.monero.org\"}, {\"pid\":\"1201\", \"user\":\"m\", \"cpu\":0.5, \"cmd\":\"uvicorn\"}, {\"pid\":\"42\", \"user\":\"root\", \"cpu\":0.0, \"cmd\":\"kworker/u2:0\"}]"
+echo "{\"timestamp\":\"$(get_ts)\",\"host\":\"$HOST\",\"module\":\"process_audit\",\"severity\":\"CRITICAL\",\"message\":\"High-risk anomaly detected: Suspicious binary executing from /tmp\",\"top_processes\":$fake_procs}" >> "$LOG_FILE"
+echo -e "${BLUE}   [Action] Note the 'ANOMALY' tag in the Process Inspection Tree table.${NC}"
+sleep 6
 
-# === 4. USER ACTIVITY (Brute Force + Sudo) ===
-echo "🔥 [4/5] SIMULATION : Attaque Brute-Force & Usurpation..."
-for i in {1..6}; do
-    sudo bash -c 'echo "$(date +"%b %_d %H:%M:%S") $(hostname) sshd[9999]: Failed password for invalid user pirate from 1.2.3.4 port 33" >> /var/log/auth.log'
+# --- STEP 4: BRUTE FORCE & PRIVILEGE ESCALATION (User Activity) ---
+echo -e "\n${RED}[!] STAGE 4: Credential Brute-Force & Privilege Escalation${NC}"
+type_text "> Infiltrating SSH subsystem... Injecting failed auth logs..."
+for i in {1..5}; do
+    sudo bash -c 'echo "$(date +"%b %_d %H:%M:%S") $(hostname) sshd[1234]: Failed password for invalid user admin from 10.0.0.50" >> /var/log/auth.log'
 done
-sudo bash -c 'echo "$(date +"%b %_d %H:%M:%S") $(hostname) sudo: pirate : TTY=pts/0 ; PWD=/home ; USER=root ; COMMAND=/bin/bash" >> /var/log/auth.log'
-sleep 8
-echo "   -> Le Widget 'Failed Logins' grimpe en rouge !"
-echo ""
+# Send the summary alert
+echo "{\"timestamp\":\"$(get_ts)\",\"host\":\"$HOST\",\"module\":\"user_activity\",\"severity\":\"WARNING\",\"message\":\"High volume of failed login attempts detected\",\"failed_attempts\":15}" >> "$LOG_FILE"
+echo -e "${BLUE}   [Action] The 'Failed Logins' KPI should now turn RED.${NC}"
+sleep 6
 
-# === 5. FILE INTEGRITY (Droits sur Shadow) ===
-echo "🔥 [5/5] SIMULATION : Corruption de l'intégrité (FIM)..."
-sudo chmod 640 /etc/shadow
+# --- STEP 5: FILE INTEGRITY BREACH (FIM) ---
+echo -e "\n${RED}[!] STAGE 5: Host Integrity Compromise (FIM)${NC}"
+type_text "> Modifying sensitive system files... Disabling audit policies..."
 sudo touch /etc/hacker.conf
-sudo chmod 777 /etc/hacker.conf
-sleep 8
-sudo chmod 600 /etc/shadow
-sudo rm /etc/hacker.conf
-echo "   -> Le Widget FIM est passé en ROUGE (CHANGED) !"
-echo ""
-echo "================================================="
-echo "✅ DÉMO TERMINÉE ET RÉUSSIE !"
-echo "================================================="
-echo "Appuyez sur ENTRÉE pour nettoyer le dashboard et clore la présentation..."
+echo "{\"timestamp\":\"$(get_ts)\",\"host\":\"$HOST\",\"module\":\"file_integrity\",\"status\":\"MODIFIED\",\"severity\":\"CRITICAL\",\"message\":\"Integrity Violation: Unauthorized file creation in /etc/ directory\"}" >> "$LOG_FILE"
+echo -e "${BLUE}   [Action] The 'FIM Status' is now 'COMPROMISED'. Critical system breach confirmed.${NC}"
+sleep 6
+
+# --- WRAP UP ---
+echo -e "\n${GREEN}=====================================================${NC}"
+echo -e "${GREEN}        THREAT SIMULATION COMPLETE - NODE OWNED      ${NC}"
+echo -e "${GREEN}=====================================================${NC}"
+echo "Press ENTER to perform post-incident recovery and clear the Control Plane..."
 read
-echo '{"command":"clear"}' >> "$LOG_FILE"
-echo "Nettoyage terminé ! À bientôt."
+
+# --- CLEANUP ---
+echo -e "${YELLOW}[*] Cleaning up traces...${NC}"
+echo "{\"command\":\"clear\"}" >> "$LOG_FILE"
+sudo rm /etc/hacker.conf
+sudo truncate -s 0 /var/log/auth.log
+type_text "[-] Removing malware... DONE"
+type_text "[-] Patching integrity baseline... DONE"
+type_text "[-] Hardening SSH configuration... DONE"
+echo -e "${BLUE}[+] System Baseline Restored. Dashboard Secured.${NC}"
