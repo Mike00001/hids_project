@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 import json
 import os
+import subprocess
 from datetime import datetime
 
 # --- CONFIGURATION ---
 LOG_PATH = "/opt/hids-project/hids_project/dashboard/test_logs/hids_system.log"
-REAL_MONITOR = "/opt/hids-project/hids_project/Modules_JSON/main_json.sh"
 HOST = "hids-server-01"
 
 class Colors:
@@ -21,21 +21,18 @@ def write_log(data):
 def clear_logs():
     open(LOG_PATH, 'w').close()
 
-# --- NOUVELLES FONCTIONS DE SOURDINE (Sécurisées) ---
-def mute_monitoring():
-    print(f"{Colors.YELLOW}[*] Silencing background monitoring...{Colors.END}")
-    # On renomme le script pour éviter qu'il ne se relance
-    os.system(f"sudo mv {REAL_MONITOR} {REAL_MONITOR}.bak 2>/dev/null")
-    # On tue les processus violemment
-    os.system("sudo pkill -9 -f 'main_json.sh' >/dev/null 2>&1")
-    os.system("sudo pkill -9 -f '_json.sh' >/dev/null 2>&1")
+# --- LA SOLUTION MAGIQUE : GELER AU LIEU DE TUER ---
+def freeze_real_scripts():
+    print(f"{Colors.YELLOW}[*] Freezing real-time monitoring...{Colors.END}")
+    # Envoie le signal de PAUSE (SIGSTOP) aux scripts. Ils dorment en mémoire sans casser le clavier.
+    subprocess.run(["sudo", "pkill", "-STOP", "-f", "main_json.sh"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    subprocess.run(["sudo", "pkill", "-STOP", "-f", "_json.sh"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-def unmute_monitoring():
-    print(f"{Colors.GREEN}[*] Restoring background monitoring...{Colors.END}")
-    # On remet le script à son nom d'origine
-    os.system(f"sudo mv {REAL_MONITOR}.bak {REAL_MONITOR} 2>/dev/null")
-    # On le relance de manière totalement détachée pour ne pas bloquer Python
-    os.system(f"sudo nohup bash {REAL_MONITOR} >/dev/null 2>&1 &")
+def unfreeze_real_scripts():
+    print(f"{Colors.GREEN}[*] Unfreezing real-time monitoring...{Colors.END}")
+    # Envoie le signal de REPRISE (SIGCONT). Ils reprennent là où ils s'étaient arrêtés.
+    subprocess.run(["sudo", "pkill", "-CONT", "-f", "main_json.sh"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    subprocess.run(["sudo", "pkill", "-CONT", "-f", "_json.sh"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 def run_demo():
     os.system('clear')
@@ -45,7 +42,7 @@ def run_demo():
 
     # --- STAGE 0: INITIALIZATION ---
     print(f"\n{Colors.GREEN}[*] STAGE 0: INITIALIZATION{Colors.END}")
-    mute_monitoring() # Application de la sourdine
+    freeze_real_scripts() # On gèle les scripts ici !
     clear_logs()
     write_log({"command": "clear"})
     print(f"{Colors.YELLOW}>>> ACTION: Refresh your browser (F5) NOW to start clean.{Colors.END}")
@@ -124,12 +121,11 @@ def run_demo():
     clear_logs()
     
     ts = get_ts()
-    # Inject Green Baseline for next F5
     write_log({"timestamp": ts, "host": HOST, "module": "system_health", "status": "OK", "severity": "INFO", "load": 0.05, "memory": 8, "disk": 2, "message": "Baseline restored"})
     write_log({"timestamp": ts, "host": HOST, "module": "file_integrity", "status": "SECURE", "severity": "INFO", "message": "Integrity verified"})
     write_log({"timestamp": ts, "host": HOST, "module": "user_activity", "severity": "INFO", "failed_attempts": 0, "message": "Auth logs rotated"})
     
-    unmute_monitoring() # Fin de la sourdine
+    unfreeze_real_scripts() # On dégèle les scripts ici !
     
     print(f"\n{Colors.YELLOW}>>> ACTION: Final Refresh (F5) NOW to restore the Dashboard baseline.{Colors.END}")
     print(f"\n{Colors.BOLD}PRESENTER NOTES:{Colors.END}")
@@ -141,4 +137,4 @@ if __name__ == "__main__":
     try:
         run_demo()
     except KeyboardInterrupt:
-        unmute_monitoring()
+        unfreeze_real_scripts()
