@@ -33,13 +33,28 @@ async def websocket_endpoint(websocket: WebSocket):
     # --- VARIABLE D'ÉTAT DU MODE DÉMO ---
     demo_mode = False 
 
-    # --- CHARGEMENT DE L'HISTORIQUE AU DÉMARRAGE ---
+    # --- CHARGEMENT DE L'HISTORIQUE AU DÉMARRAGE (CORRIGÉ) ---
     try:
         with open(LOG_FILE, "r") as f:
             lines = f.readlines()
             for line in lines[-100:]: 
                 if line.strip():
-                    await websocket.send_json(json.loads(line.strip()))
+                    try:
+                        payload = json.loads(line.strip())
+                        
+                        # LE CORRECTIF EST ICI : On actualise le mode démo même quand on lit l'historique !
+                        if payload.get("command") == "start_demo":
+                            demo_mode = True
+                        elif payload.get("command") == "stop_demo":
+                            demo_mode = False
+                            
+                        # On filtre l'historique si on est en mode démo
+                        if demo_mode and not payload.get("is_demo") and payload.get("command") not in ["start_demo", "stop_demo"]:
+                            continue
+
+                        await websocket.send_json(payload)
+                    except:
+                        pass
     except:
         pass
 
@@ -52,7 +67,6 @@ async def websocket_endpoint(websocket: WebSocket):
                 while True:
                     current_size = os.path.getsize(LOG_FILE)
                     
-                    # SI LE FICHIER A ÉTÉ VIDÉ (TRUNCATE)
                     if current_size < last_size:
                         demo_mode = False 
                         break 
@@ -67,7 +81,6 @@ async def websocket_endpoint(websocket: WebSocket):
                         try:
                             payload = json.loads(line.strip())
                             
-                            # INTERCEPTION DES COMMANDES DE DÉMO
                             if payload.get("command") == "start_demo":
                                 demo_mode = True
                                 continue
@@ -75,7 +88,6 @@ async def websocket_endpoint(websocket: WebSocket):
                                 demo_mode = False
                                 continue
                                 
-                            # LE FILTRE MAGIQUE
                             if demo_mode and not payload.get("is_demo"):
                                 continue
 
