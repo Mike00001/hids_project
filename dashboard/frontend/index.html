@@ -6,110 +6,83 @@
     <title>Sentinel HIDS | Management Console</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #0f172a; }
         .mono { font-family: 'JetBrains Mono', monospace; }
-        .custom-scrollbar::-webkit-scrollbar { width: 5px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 5px; }
-        .card { background-color: #ffffff; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1); }
-        .incident-card { transition: background-color 0.15s ease; border: 1px solid #e2e8f0; border-left-width: 4px; }
-        .incident-card:hover { background-color: #f1f5f9; }
+        .card { background: white; border: 1px solid #e2e8f0; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .incident-card { border-left: 4px solid transparent; transition: all 0.2s; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     </style>
 </head>
 <body class="p-6">
-
     <div class="max-w-[1600px] mx-auto">
-        <header class="flex justify-between items-center mb-8 bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
+        <header class="flex justify-between items-center mb-8 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
             <div class="flex items-center space-x-4">
-                <div class="bg-indigo-600 p-2 rounded text-white font-bold text-xl shadow-lg shadow-indigo-200">S</div>
+                <div class="bg-indigo-600 p-2 rounded shadow-lg text-white font-bold text-xl">S</div>
                 <div>
-                    <h1 class="text-lg font-bold tracking-tight text-slate-900">SENTINEL <span class="text-indigo-600 font-semibold">HIDS</span></h1>
-                    <p class="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Node: hids-server-01.internal</p>
+                    <h1 class="text-lg font-bold text-slate-900">SENTINEL <span class="text-indigo-600 font-semibold">HIDS</span></h1>
+                    <p class="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Node: hids-server-01.internal</p>
                 </div>
             </div>
-            
-            <div class="flex items-center space-x-6">
-                <div class="text-right">
-                    <p class="text-[9px] uppercase font-bold text-slate-400 mb-1">Infrastructure Status</p>
-                    <div class="flex items-center justify-end space-x-2 bg-slate-50 px-3 py-1 rounded-full border border-slate-200">
-                        <span id="status-dot" class="w-2 h-2 rounded-full bg-slate-300"></span>
-                        <span id="conn-label" class="text-[10px] font-bold text-slate-500 uppercase">Connecting...</span>
-                    </div>
-                </div>
+            <div class="flex items-center space-x-2 bg-slate-50 px-3 py-1 rounded-full border border-slate-200">
+                <span id="status-dot" class="w-2 h-2 rounded-full bg-slate-300"></span>
+                <span id="conn-label" class="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">Connecting...</span>
             </div>
         </header>
 
         <section class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             <div class="card p-5 rounded-xl">
-                <p class="text-[11px] text-slate-500 uppercase font-bold mb-2">Avg System Load</p>
-                <p id="stat-system" class="text-3xl font-bold text-slate-900">--</p>
+                <p class="text-[11px] text-slate-500 font-bold uppercase mb-2">System Load</p>
+                <p id="stat-system" class="text-3xl font-bold tracking-tight">--</p>
             </div>
             <div class="card p-5 rounded-xl">
-                <p class="text-[11px] text-slate-500 uppercase font-bold mb-2">Failed Auth (24h)</p>
-                <p id="stat-users" class="text-3xl font-bold text-slate-900">0</p>
+                <p class="text-[11px] text-slate-500 font-bold uppercase mb-2">Failed Auth (24h)</p>
+                <p id="stat-users" class="text-3xl font-bold tracking-tight text-slate-900">0</p>
             </div>
-            <div class="card p-5 rounded-xl border-t-4 border-t-indigo-500">
-                <p class="text-[11px] text-slate-500 uppercase font-bold mb-2">Network Exposure</p>
-                <div class="flex items-baseline space-x-2">
-                    <p id="stat-network" class="text-3xl font-bold text-slate-900">0</p>
-                    <span class="text-xs text-slate-400 font-medium italic">Active Ports</span>
-                </div>
+            <div class="card p-5 rounded-xl border-t-4 border-indigo-500">
+                <p class="text-[11px] text-slate-500 font-bold uppercase mb-2">Network Surface</p>
+                <div class="flex items-baseline space-x-1"><p id="stat-network" class="text-3xl font-bold">0</p><span class="text-[10px] text-slate-400 font-bold uppercase">Ports</span></div>
             </div>
             <div class="card p-5 rounded-xl">
-                <p class="text-[11px] text-slate-500 uppercase font-bold mb-2">Integrity Health</p>
-                <p id="stat-fim" class="text-3xl font-bold text-emerald-600 italic">SECURE</p>
+                <p class="text-[11px] text-slate-500 font-bold uppercase mb-2">FIM Integrity</p>
+                <p id="stat-fim" class="text-2xl font-bold text-emerald-600 italic">SECURE</p>
             </div>
         </section>
 
         <div class="grid grid-cols-1 xl:grid-cols-12 gap-8">
-            
             <div class="xl:col-span-8 space-y-8">
                 <div class="card p-6 rounded-xl">
-                    <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-sm font-bold text-slate-800 flex items-center uppercase tracking-tight">
-                            <span class="w-1 h-5 bg-indigo-500 mr-3 rounded-full"></span> Telemetry Overview
-                        </h2>
-                    </div>
+                    <h2 class="text-xs font-bold text-slate-400 mb-6 uppercase tracking-widest flex items-center">
+                        <span class="w-1 h-4 bg-indigo-500 mr-2 rounded"></span> Performance Telemetry
+                    </h2>
                     <canvas id="metricsChart" height="90"></canvas>
                 </div>
-
                 <div class="card rounded-xl overflow-hidden">
-                    <div class="p-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-                        <h2 class="text-sm font-bold text-slate-800 uppercase tracking-tight">Process Audit Logs</h2>
-                        <span class="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded">LIVE STREAM</span>
+                    <div class="p-4 bg-slate-50/50 border-b border-slate-100 flex justify-between items-center">
+                        <h2 class="text-xs font-bold text-slate-800 uppercase tracking-tight">Process Tree Inspection</h2>
+                        <span class="text-[9px] font-bold bg-indigo-100 text-indigo-700 px-2 py-1 rounded tracking-widest">LIVE</span>
                     </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs">
-                            <thead class="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold">
-                                <tr>
-                                    <th class="p-4">PID</th><th>User</th><th>CPU Load</th><th>Command</th><th class="text-right p-4">Security State</th>
-                                </tr>
-                            </thead>
-                            <tbody id="process-table" class="divide-y divide-slate-100">
-                                <tr><td colspan="5" class="p-12 text-center text-slate-400 italic">No inbound telemetry detected.</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-50/50 text-slate-500 uppercase text-[9px] font-bold border-b border-slate-100">
+                            <tr><th class="p-4">PID</th><th>User</th><th>CPU%</th><th>Executable</th><th class="text-right p-4">State</th></tr>
+                        </thead>
+                        <tbody id="process-table" class="divide-y divide-slate-100"></tbody>
+                    </table>
                 </div>
             </div>
 
-            <div class="xl:col-span-4 flex flex-col">
-                <div class="card flex-1 rounded-xl flex flex-col max-h-[900px]">
-                    <div class="p-4 border-b border-slate-100 flex justify-between items-center">
-                        <h2 class="text-sm font-bold uppercase tracking-tight text-slate-800">Security Events</h2>
-                        <button onclick="clearAlerts()" class="text-[10px] font-bold px-3 py-1 text-slate-500 hover:text-slate-800 transition">CLEAR ALL</button>
-                    </div>
-
-                    <div id="alerts-container" class="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar bg-slate-50/30">
-                        </div>
-
-                    <div class="p-4 bg-white border-t border-slate-100 grid grid-cols-3 gap-2">
-                        <button id="btn-info" onclick="toggleFilter('INFO', 'btn-info')" class="py-2 text-[10px] font-bold rounded border border-blue-200 bg-blue-50 text-blue-600">INFO</button>
-                        <button id="btn-warning" onclick="toggleFilter('WARNING', 'btn-warning')" class="py-2 text-[10px] font-bold rounded border border-amber-200 bg-amber-50 text-amber-600">WARNING</button>
-                        <button id="btn-critical" onclick="toggleFilter('CRITICAL', 'btn-critical')" class="py-2 text-[10px] font-bold rounded border border-rose-200 bg-rose-50 text-rose-600">CRITICAL</button>
-                    </div>
+            <div class="xl:col-span-4 card flex flex-col rounded-xl overflow-hidden max-h-[850px]">
+                <div class="p-4 border-b border-slate-100 bg-white flex justify-between items-center">
+                    <h2 class="text-xs font-bold uppercase tracking-tight text-slate-800">Security Events</h2>
+                    <button onclick="clearAlerts()" class="text-[10px] font-bold text-slate-400 hover:text-slate-800 transition">CLEAR</button>
+                </div>
+                <div id="alerts-container" class="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar bg-slate-50/30"></div>
+                <div class="p-3 border-t border-slate-100 bg-white grid grid-cols-3 gap-2">
+                    <button id="btn-info" onclick="toggleFilter('INFO', 'btn-info')" class="py-2 text-[10px] font-bold rounded bg-blue-50 text-blue-600 border border-blue-100">INFO</button>
+                    <button id="btn-warning" onclick="toggleFilter('WARNING', 'btn-warning')" class="py-2 text-[10px] font-bold rounded bg-amber-50 text-amber-600 border border-amber-100">WARN</button>
+                    <button id="btn-critical" onclick="toggleFilter('CRITICAL', 'btn-critical')" class="py-2 text-[10px] font-bold rounded bg-rose-50 text-rose-600 border border-rose-100">CRIT</button>
                 </div>
             </div>
         </div>
@@ -119,78 +92,58 @@
         const serverIP = window.location.hostname;
         const serverPort = window.location.port || "8000";
         const ws = new WebSocket(`ws://${serverIP}:${serverPort}/ws/alerts`);
-
         let alertHistory = [];
-        const MAX_ALERTS = 100;
         let activeFilters = { 'INFO': true, 'WARNING': true, 'CRITICAL': true };
 
-        // --- CHARTS CONFIG ---
-        Chart.defaults.color = '#94a3b8';
-        Chart.defaults.font.family = 'Inter';
         const metricsChart = new Chart(document.getElementById('metricsChart'), {
             type: 'line',
             data: { labels: [], datasets: [
-                { label: 'CPU Usage', data: [], borderColor: '#4f46e5', backgroundColor: 'rgba(79, 70, 229, 0.05)', borderWidth: 2, fill: true, pointRadius: 0, tension: 0.35 },
-                { label: 'RAM Usage', data: [], borderColor: '#9333ea', backgroundColor: 'rgba(147, 51, 234, 0.05)', borderWidth: 2, fill: true, pointRadius: 0, tension: 0.35 }
+                { label: 'CPU Usage', data: [], borderColor: '#4f46e5', backgroundColor: 'rgba(79, 70, 229, 0.05)', fill: true, tension: 0.35, pointRadius: 0 },
+                { label: 'RAM Usage', data: [], borderColor: '#9333ea', backgroundColor: 'rgba(147, 51, 234, 0.05)', fill: true, tension: 0.35, pointRadius: 0 }
             ]},
-            options: { responsive: true, plugins: { legend: { display: true, position: 'top', align: 'end', labels: { boxWidth: 6, usePointStyle: true, font: { size: 10, weight: 'bold' } } } }, scales: { y: { beginAtZero: true, grid: { color: '#f1f5f9' } }, x: { display: false } } }
+            options: { responsive: true, plugins: { legend: { display: true, position: 'top', align: 'end', labels: { boxWidth: 6, usePointStyle: true, font: { size: 10 } } } }, scales: { y: { beginAtZero: true, grid: { color: '#f1f5f9' } }, x: { display: false } } }
         });
 
-        // --- UI RENDERING ---
         function renderAlerts() {
             const container = document.getElementById('alerts-container');
             container.innerHTML = '';
-            
             alertHistory.forEach(data => {
                 if (activeFilters[data.severity || 'INFO']) {
-                    const borderCol = data.severity === 'CRITICAL' ? 'border-l-rose-500 bg-white' : data.severity === 'WARNING' ? 'border-l-amber-500 bg-white' : 'border-l-indigo-500 bg-white';
-                    const labelStyle = data.severity === 'CRITICAL' ? 'bg-rose-50 text-rose-700' : data.severity === 'WARNING' ? 'bg-amber-50 text-amber-700' : 'bg-indigo-50 text-indigo-700';
+                    const border = data.severity === 'CRITICAL' ? 'border-l-rose-500' : data.severity === 'WARNING' ? 'border-l-amber-500' : 'border-l-indigo-500';
+                    const badge = data.severity === 'CRITICAL' ? 'bg-rose-50 text-rose-700' : data.severity === 'WARNING' ? 'bg-amber-50 text-amber-700' : 'bg-indigo-50 text-indigo-700';
+                    
+                    let extra = "";
+                    if (data.module === "user_activity") extra = `Source: <span class="font-bold text-slate-800">auth.log</span> | Count: ${data.failed_attempts || 0}`;
+                    else if (data.module === "process_audit" && data.top_processes) extra = `Resource Load: <span class="text-rose-600 font-bold">${data.top_processes[0].cpu}% CPU</span>`;
 
-                    let details = "";
-                    if (data.module === "process_audit" && data.top_processes) {
-                        details = `Process: <span class="text-slate-900 font-bold">${data.top_processes[0].cmd}</span> (CPU: ${data.top_processes[0].cpu}%)`;
-                    } else if (data.module === "user_activity") {
-                        details = `Buffer: <span class="text-slate-900 font-bold">${data.failed_attempts || 0} failures</span> in auth.log`;
-                    } else if (data.module === "network_audit") {
-                        details = `Interface: <span class="text-slate-900 font-bold">${data.open_ports} active listeners</span>`;
-                    }
-
-                    container.innerHTML += `
-                        <div class="incident-card p-4 rounded-lg shadow-sm ${borderCol}">
-                            <div class="flex justify-between items-center mb-2">
-                                <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded ${labelStyle}">${data.module || 'SYSTEM'}</span>
-                                <span class="text-[10px] font-mono text-slate-400 font-medium">${data.timestamp ? data.timestamp.split(' ')[1] : ''}</span>
-                            </div>
-                            <p class="text-xs font-bold text-slate-800 mb-2">${data.message}</p>
-                            ${details ? `<div class="text-[10px] text-slate-500 font-mono py-2 px-3 bg-slate-50 rounded border border-slate-100">
-                                ℹ️ <span class="ml-1">${details}</span>
-                            </div>` : ''}
-                        </div>`;
+                    container.innerHTML += `<div class="p-4 rounded-lg bg-white border border-slate-200 shadow-sm incident-card ${border}">
+                        <div class="flex justify-between mb-2"><span class="text-[9px] font-black uppercase px-2 py-0.5 rounded ${badge}">${data.module || 'SYS'}</span><span class="text-[10px] font-mono text-slate-400">${data.timestamp ? data.timestamp.split(' ')[1] : ''}</span></div>
+                        <p class="text-xs font-bold text-slate-800 leading-tight">${data.message}</p>
+                        ${extra ? `<p class="mt-2 text-[10px] text-slate-500 bg-slate-50 p-2 rounded border border-slate-100 font-mono italic">${extra}</p>` : ''}
+                    </div>`;
                 }
             });
         }
 
-        function toggleFilter(sev, id) { 
-            activeFilters[sev] = !activeFilters[sev]; 
-            document.getElementById(id).style.opacity = activeFilters[sev] ? "1" : "0.3"; 
+        function toggleFilter(sev, id) { activeFilters[sev] = !activeFilters[sev]; document.getElementById(id).style.opacity = activeFilters[sev] ? "1" : "0.3"; renderAlerts(); }
+        function clearAlerts() { 
+            alertHistory = []; 
+            document.getElementById('stat-users').innerText = "0";
+            document.getElementById('stat-network').innerText = "0";
+            document.getElementById('stat-fim').innerText = "SECURE";
+            document.getElementById('stat-fim').className = "text-2xl font-bold text-emerald-600 italic";
+            document.getElementById('process-table').innerHTML = '';
             renderAlerts(); 
         }
 
-        function clearAlerts() { alertHistory = []; renderAlerts(); }
-
-        // --- WEBSOCKET ---
-        ws.onopen = () => {
-            document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-emerald-500";
-            document.getElementById('conn-label').innerText = "LIVE CONNECTION";
-            document.getElementById('conn-label').className = "text-[10px] font-bold text-emerald-600";
-        };
-
+        ws.onopen = () => { document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-emerald-500"; document.getElementById('conn-label').innerText = "LIVE CONNECTION"; document.getElementById('conn-label').className = "text-[10px] font-bold text-emerald-600 uppercase tracking-tighter"; };
         ws.onmessage = (event) => {
             const data = JSON.parse(event.data);
             if (data.command === "clear") { clearAlerts(); return; }
+            if (data.command === "reload") { window.location.reload(); return; }
 
             alertHistory.unshift(data);
-            if (alertHistory.length > MAX_ALERTS) alertHistory.pop();
+            if (alertHistory.length > 50) alertHistory.pop();
 
             if (data.module === "system_health") {
                 document.getElementById('stat-system').innerText = data.load;
@@ -202,40 +155,22 @@
             }
             if (data.module === "user_activity" && data.failed_attempts !== undefined) {
                 document.getElementById('stat-users').innerText = data.failed_attempts;
-                document.getElementById('stat-users').className = `text-3xl font-bold ${data.failed_attempts > 5 ? 'text-rose-600' : 'text-slate-900'}`;
+                document.getElementById('stat-users').className = `text-3xl font-bold ${data.failed_attempts > 10 ? 'text-rose-600' : 'text-slate-900'}`;
             }
             if (data.module === "network_audit") document.getElementById('stat-network').innerText = data.open_ports;
             if (data.module === "file_integrity") {
-                const isComp = data.status === "MODIFIED";
-                document.getElementById('stat-fim').innerText = isComp ? "COMPROMISED" : "VERIFIED";
-                document.getElementById('stat-fim').className = `text-3xl font-bold ${isComp ? 'text-rose-600' : 'text-emerald-600'}`;
+                const isMod = data.status === "MODIFIED";
+                document.getElementById('stat-fim').innerText = isMod ? "COMPROMISED" : "SECURE";
+                document.getElementById('stat-fim').className = `text-2xl font-bold italic ${isMod ? 'text-rose-600' : 'text-emerald-600'}`;
             }
-
             if (data.module === "process_audit" && data.top_processes) {
-                const tableBody = document.getElementById('process-table');
-                tableBody.innerHTML = '';
-                data.top_processes.forEach(proc => {
-                    const isHigh = proc.cpu > 70;
-                    tableBody.innerHTML += `
-                        <tr class="hover:bg-slate-50 transition-colors">
-                            <td class="p-4 text-slate-400 mono font-medium">${proc.pid}</td>
-                            <td class="font-semibold text-slate-700">${proc.user}</td>
-                            <td class="${isHigh ? 'text-rose-600 font-bold' : 'text-slate-600'}">${proc.cpu}%</td>
-                            <td class="mono text-[11px] text-slate-500 truncate max-w-[250px]">${proc.cmd}</td>
-                            <td class="text-right p-4">
-                                <span class="px-2.5 py-1 rounded-full text-[9px] font-bold ${isHigh ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'}">
-                                    ${isHigh ? 'ANOMALY' : 'TRUSTED'}
-                                </span>
-                            </td>
-                        </tr>`;
+                const body = document.getElementById('process-table'); body.innerHTML = '';
+                data.top_processes.forEach(p => {
+                    const isHigh = p.cpu > 70;
+                    body.innerHTML += `<tr class="hover:bg-slate-50 transition-colors"><td class="p-4 text-slate-400 mono font-medium">${p.pid}</td><td class="font-semibold text-slate-700">${p.user}</td><td class="${isHigh ? 'text-rose-600 font-bold' : 'text-slate-600'}">${p.cpu}%</td><td class="mono text-[11px] text-slate-500 truncate max-w-[200px]">${p.cmd}</td><td class="text-right p-4"><span class="px-2 py-0.5 rounded-full text-[9px] font-bold ${isHigh ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'}">${isHigh ? 'ANOMALY' : 'TRUSTED'}</span></td></tr>`;
                 });
             }
             renderAlerts();
-        };
-
-        ws.onclose = () => {
-            document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-slate-300";
-            document.getElementById('conn-label').innerText = "OFFLINE";
         };
     </script>
 </body>
