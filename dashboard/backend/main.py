@@ -9,11 +9,8 @@ import os
 app = FastAPI(title="Sentinel HIDS - Management API")
 
 app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    CORSMiddleware, allow_origins=["*"], allow_credentials=True,
+    allow_methods=["*"], allow_headers=["*"],
 )
 
 BASE_DIR = Path(__file__).parent.parent
@@ -30,8 +27,18 @@ async def websocket_endpoint(websocket: WebSocket):
         LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
         LOG_FILE.touch()
 
-    # --- VARIABLE D'ÉTAT DU MODE DÉMO ---
     demo_mode = False 
+
+    # --- CHARGEMENT DE L'HISTORIQUE AU DÉMARRAGE ---
+    # Pour éviter que l'écran soit vide, on lit les dernières lignes existantes
+    try:
+        with open(LOG_FILE, "r") as f:
+            lines = f.readlines()
+            for line in lines[-10:]: # On envoie les 10 derniers messages
+                if line.strip():
+                    await websocket.send_json(json.loads(line.strip()))
+    except:
+        pass
 
     try:
         while True:
@@ -41,11 +48,9 @@ async def websocket_endpoint(websocket: WebSocket):
                 
                 while True:
                     current_size = os.path.getsize(LOG_FILE)
-                    
-                    # SI LE FICHIER A ÉTÉ VIDÉ (TRUNCATE)
                     if current_size < last_size:
-                        demo_mode = False # SÉCURITÉ : Annule le mode démo si on vide le log
-                        break # On sort du 'with' pour réouvrir le fichier au début
+                        demo_mode = False 
+                        break 
 
                     line = f.readline()
                     if not line:
@@ -56,8 +61,6 @@ async def websocket_endpoint(websocket: WebSocket):
                     if line.strip():
                         try:
                             payload = json.loads(line.strip())
-                            
-                            # INTERCEPTION DES COMMANDES DE DÉMO
                             if payload.get("command") == "start_demo":
                                 demo_mode = True
                                 continue
@@ -65,17 +68,12 @@ async def websocket_endpoint(websocket: WebSocket):
                                 demo_mode = False
                                 continue
                                 
-                            # LE FILTRE MAGIQUE : 
-                            # Si on est en démo, on ignore les logs qui n'ont pas la balise "is_demo"
                             if demo_mode and not payload.get("is_demo"):
                                 continue
 
-                            # On envoie la donnée au navigateur
                             await websocket.send_json(payload)
                         except:
                             pass
                     last_size = current_size
     except WebSocketDisconnect:
         pass
-    except Exception as e:
-        print(f"WS Error: {e}")
